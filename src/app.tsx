@@ -23,6 +23,7 @@ import { Toggle } from "@/components/toggle/Toggle";
 import { Textarea } from "@/components/textarea/Textarea";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { ToolInvocationCard } from "@/components/tool-invocation-card/ToolInvocationCard";
+import { IngredientsCalculator } from "@/components/ingredients-calculator/IngredientsCalculator";
 
 // Icon imports
 import {
@@ -504,128 +505,140 @@ export default function Chat() {
     <div className="app-shell min-h-dvh h-dvh w-full p-4 flex justify-center items-stretch bg-fixed">
       {/* <HasOpenAIKey /> */}
       <div className="app-content w-full max-w-5xl flex-1 h-full mx-auto flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(320px,380px)_1fr] lg:items-stretch lg:overflow-hidden">
-        <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-4 py-4 shadow">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Shared Cooking Timer
-                </p>
-                <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                  {timerStatusLabel}
-                </p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Linked to ID{" "}
-                  <span className="font-mono text-sm">{agentId}</span>
-                </p>
-              </div>
-              <div className="text-4xl sm:text-5xl font-mono text-neutral-900 dark:text-neutral-50">
-                {formattedTimer}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="primary"
-                size="sm"
-                disabled={!canStart}
-                onClick={handleStart}
-              >
-                Start
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={!canPause}
-                onClick={handlePause}
-              >
-                Pause
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={!canReset}
-                onClick={handleReset}
-              >
-                Reset
-              </Button>
-            </div>
-
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Common Times
-              </p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {PRESET_TIMERS.map((preset) => (
-                  <Button
-                    key={preset.label}
-                    size="sm"
-                    variant={
-                      timerState.label === preset.label &&
-                      timerState.totalMs > 0
-                        ? "primary"
-                        : "tertiary"
-                    }
-                    onClick={() =>
-                      handlePresetSelect(preset.minutes, preset.label)
-                    }
-                  >
-                    {preset.label} ({preset.minutes} min)
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Custom Time
-              </p>
-              <div className="flex flex-wrap items-end gap-3 mt-2">
-                <label className="flex flex-col text-xs font-semibold text-muted-foreground">
-                  Minutes
-                  <input
-                    type="number"
-                    min="0"
-                    className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
-                    value={customMinutes}
-                    onChange={handleMinutesChange}
-                  />
-                </label>
-                <label className="flex flex-col text-xs font-semibold text-muted-foreground">
-                  Seconds
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
-                    value={customSeconds}
-                    onChange={handleSecondsChange}
-                  />
-                </label>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={!canApplyCustom}
-                  onClick={handleCustomTimeSet}
-                >
-                  Set Custom Time
-                </Button>
-              </div>
-            </div>
-
-            {timerState.status === "finished" && (
-              <p className="text-xs text-green-600 dark:text-green-400">
-                Timer complete! Reset or select another time to restart.
-              </p>
-            )}
-            {timerState.totalMs === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Pick a preset or enter a custom time to begin. Everyone using
-                this ID will see the same countdown.
-              </p>
-            )}
+        <div className="flex flex-col gap-4 h-full overflow-hidden">
+          <div className="flex-1 min-h-0">
+             <IngredientsCalculator />
           </div>
-        </Card>
+          <div className="flex-1 min-h-0">
+            <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-0 py-0 shadow overflow-hidden flex flex-col h-full">
+              <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/80 backdrop-blur">
+                <h2 className="font-semibold text-base">Timer</h2>
+              </div>
+              <div className="p-4 flex flex-col gap-4 flex-1 overflow-y-auto">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Shared Cooking Timer
+                      </p>
+                      <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                        {timerStatusLabel}
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Linked to ID{" "}
+                        <span className="font-mono text-sm">{agentId}</span>
+                      </p>
+                    </div>
+                    <div className="text-4xl sm:text-5xl font-mono text-neutral-900 dark:text-neutral-50">
+                      {formattedTimer}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={!canStart}
+                      onClick={handleStart}
+                    >
+                      Start
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={!canPause}
+                      onClick={handlePause}
+                    >
+                      Pause
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!canReset}
+                      onClick={handleReset}
+                    >
+                      Reset
+                    </Button>
+                  </div>
+
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Common Times
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {PRESET_TIMERS.map((preset) => (
+                        <Button
+                          key={preset.label}
+                          size="sm"
+                          variant={
+                            timerState.label === preset.label &&
+                            timerState.totalMs > 0
+                              ? "primary"
+                              : "tertiary"
+                          }
+                          onClick={() =>
+                            handlePresetSelect(preset.minutes, preset.label)
+                          }
+                        >
+                          {preset.label} ({preset.minutes} min)
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Custom Time
+                    </p>
+                    <div className="flex flex-wrap items-end gap-3 mt-2">
+                      <label className="flex flex-col text-xs font-semibold text-muted-foreground">
+                        Minutes
+                        <input
+                          type="number"
+                          min="0"
+                          className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+                          value={customMinutes}
+                          onChange={handleMinutesChange}
+                        />
+                      </label>
+                      <label className="flex flex-col text-xs font-semibold text-muted-foreground">
+                        Seconds
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+                          value={customSeconds}
+                          onChange={handleSecondsChange}
+                        />
+                      </label>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={!canApplyCustom}
+                        onClick={handleCustomTimeSet}
+                      >
+                        Set Custom Time
+                      </Button>
+                    </div>
+                  </div>
+
+                  {timerState.status === "finished" && (
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      Timer complete! Reset or select another time to restart.
+                    </p>
+                  )}
+                  {timerState.totalMs === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Pick a preset or enter a custom time to begin. Everyone using
+                      this ID will see the same countdown.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
 
         <Card className="chat-panel flex-1 min-h-0 h-full w-full mx-auto flex flex-col shadow-xl rounded-xl overflow-hidden border border-neutral-300 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur p-0">
           <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 flex items-center gap-3 sticky top-0 z-10 bg-white/90 dark:bg-neutral-900/80 backdrop-blur">
