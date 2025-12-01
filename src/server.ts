@@ -17,7 +17,7 @@ import {
 import { createWorkersAI } from 'workers-ai-provider';
 import { processToolCalls, cleanupMessages } from "./utils";
 import { tools, executions } from "./tools";
-// import { env } from "cloudflare:workers";
+import { env } from "cloudflare:workers";
 
 const workersai = createWorkersAI({ binding: env.AI });
 
