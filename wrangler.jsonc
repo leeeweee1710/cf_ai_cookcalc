@@ -1,9 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "my-chat-agent",
+  "name": "cookcalc",
   "main": "src/server.ts",
   "compatibility_date": "2025-08-03",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "ai": {
     "binding": "AI",
     "remote": true
@@ -22,7 +24,9 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["Chat"]
+      "new_sqlite_classes": [
+        "Chat"
+      ]
     }
   ]
 }
