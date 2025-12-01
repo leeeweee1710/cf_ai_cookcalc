@@ -32,7 +32,9 @@ import {
   Sun,
   Trash,
   PaperPlaneTilt,
-  Stop
+  Stop,
+  Microphone,
+  MicrophoneSlash
 } from "@phosphor-icons/react";
 
 // List of tools that require human confirmation
@@ -40,6 +42,56 @@ import {
 const toolsRequiringConfirmation: (keyof typeof tools)[] = [
   "getWeatherInformation"
 ];
+
+type SpeechRecognitionAlternativeLike = {
+  transcript: string;
+  confidence: number;
+};
+
+type SpeechRecognitionResultLike = {
+  readonly isFinal: boolean;
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternativeLike;
+  [index: number]: SpeechRecognitionAlternativeLike;
+};
+
+type SpeechRecognitionResultListLike = {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResultLike;
+  [index: number]: SpeechRecognitionResultLike;
+};
+
+type SpeechRecognitionEventLike = Event & {
+  readonly resultIndex: number;
+  readonly results: SpeechRecognitionResultListLike;
+};
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: ((event: Event) => void) | null;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+type WindowWithSpeechRecognition = Window & {
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  SpeechRecognition?: SpeechRecognitionConstructor;
+};
+
+const getSpeechRecognitionConstructor = (): SpeechRecognitionConstructor | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const scopedWindow = window as WindowWithSpeechRecognition;
+  return scopedWindow.SpeechRecognition || scopedWindow.webkitSpeechRecognition || null;
+};
 
 const PRESET_TIMERS = [
   { label: "Rice", minutes: 10 },
@@ -98,7 +150,6 @@ export default function Chat() {
   });
   const [agentId] = useState<string>(() => ensureAgentId());
   const [showDebug, setShowDebug] = useState(false);
-  const [textareaHeight, setTextareaHeight] = useState("auto");
   const [timerState, setTimerState] = useState<TimerSharedState>(() =>
     createDefaultTimerState()
   );
@@ -106,6 +157,10 @@ export default function Chat() {
   const [customMinutes, setCustomMinutes] = useState("5");
   const [customSeconds, setCustomSeconds] = useState("0");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const [isSpeechSupported, setIsSpeechSupported] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState<string | null>(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -135,6 +190,14 @@ export default function Chat() {
     setTheme(newTheme);
   };
 
+  useEffect(() => {
+    setIsSpeechSupported(Boolean(getSpeechRecognitionConstructor()));
+    return () => {
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
+    };
+  }, []);
+
   const agent = useAgent<AgentSharedState | undefined>({
     agent: "chat",
     name: agentId,
@@ -155,6 +218,75 @@ export default function Chat() {
   ) => {
     setAgentInput(e.target.value);
   };
+
+  const appendToAgentInput = useCallback((text: string) => {
+    setAgentInput((prev) => {
+      const trimmed = text.trim();
+      if (!trimmed) return prev;
+      if (!prev) {
+        return trimmed;
+      }
+      return `${prev.trimEnd()} ${trimmed}`;
+    });
+  }, []);
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setIsListening(false);
+  }, []);
+
+  const handleVoiceInputToggle = useCallback(() => {
+    if (!isSpeechSupported) {
+      return;
+    }
+
+    if (isListening) {
+      stopListening();
+      return;
+    }
+
+    const SpeechRecognitionCtor = getSpeechRecognitionConstructor();
+    if (!SpeechRecognitionCtor) {
+      setSpeechError("Voice recognition is not available in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognitionCtor();
+    recognitionRef.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = navigator.language || "en-US";
+
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalTranscript += result[0].transcript;
+        }
+      }
+
+      if (finalTranscript) {
+        appendToAgentInput(finalTranscript);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event);
+      setSpeechError("Voice input encountered an issue. Please try again.");
+      stopListening();
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.start();
+    setSpeechError(null);
+    setIsListening(true);
+  }, [appendToAgentInput, isListening, isSpeechSupported, stopListening]);
 
   const handleAgentSubmit = async (
     e: React.FormEvent,
@@ -369,9 +501,9 @@ export default function Chat() {
   };
 
   return (
-    <div className="min-h-screen w-full p-4 flex justify-center items-center bg-fixed">
+    <div className="app-shell min-h-dvh h-dvh w-full p-4 flex justify-center items-stretch bg-fixed">
       {/* <HasOpenAIKey /> */}
-      <div className="w-full max-w-5xl mx-auto h-full flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(320px,380px)_1fr] lg:items-stretch">
+      <div className="app-content w-full max-w-5xl flex-1 h-full mx-auto flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(320px,380px)_1fr] lg:items-stretch lg:overflow-hidden">
         <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-4 py-4 shadow">
           <div className="flex flex-col gap-4">
             <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -495,9 +627,9 @@ export default function Chat() {
           </div>
         </Card>
 
-        <Card className="flex-1 min-h-0 w-full mx-auto flex flex-col shadow-xl rounded-xl overflow-hidden border border-neutral-300 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur p-0">
+        <Card className="chat-panel flex-1 min-h-0 h-full w-full mx-auto flex flex-col shadow-xl rounded-xl overflow-hidden border border-neutral-300 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur p-0">
           <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 flex items-center gap-3 sticky top-0 z-10 bg-white/90 dark:bg-neutral-900/80 backdrop-blur">
-            <div className="flex items-center justify-center h-8 w-8">
+            {/* <div className="flex items-center justify-center h-8 w-8">
               <svg
                 width="28px"
                 height="28px"
@@ -513,10 +645,10 @@ export default function Chat() {
                 </symbol>
                 <use href="#ai:local:agents" />
               </svg>
-            </div>
+            </div> */}
 
             <div className="flex-1">
-              <h2 className="font-semibold text-base">AI Chat Agent</h2>
+              <h2 className="font-semibold text-base">Chat to Cook</h2>
             </div>
 
             <div className="flex items-center gap-2 mr-2">
@@ -550,7 +682,7 @@ export default function Chat() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4 bg-white/70 dark:bg-neutral-950/30">
+          <div className="messages-container flex-1 min-h-0 max-h-full overflow-y-auto px-4 py-4 space-y-4 bg-white/70 dark:bg-neutral-950/30">
           {agentMessages.length === 0 && (
             <div className="flex items-center justify-center py-10">
               <Card className="p-6 max-w-md mx-auto bg-neutral-100 dark:bg-neutral-900">
@@ -713,63 +845,77 @@ export default function Chat() {
                   hello: "world"
                 }
               });
-              setTextareaHeight("auto"); // Reset height after submission
             }}
             className="px-4 py-3 bg-neutral-50/80 dark:bg-neutral-900/80 border-t border-neutral-300 dark:border-neutral-800"
           >
             <div className="flex items-center gap-2">
-              <div className="flex-1 relative">
-                <Textarea
-                  disabled={pendingToolCallConfirmation}
-                  placeholder={
-                    pendingToolCallConfirmation
-                      ? "Please respond to the tool confirmation above..."
-                      : "Send a message..."
-                  }
-                  className="flex w-full border border-neutral-200 dark:border-neutral-700 px-3 py-2  ring-offset-background placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 dark:focus-visible:ring-neutral-700 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base pb-10 dark:bg-neutral-900"
-                  value={agentInput}
-                  onChange={(e) => {
-                    handleAgentInputChange(e);
-                    // Auto-resize the textarea
-                    e.target.style.height = "auto";
-                    e.target.style.height = `${e.target.scrollHeight}px`;
-                    setTextareaHeight(`${e.target.scrollHeight}px`);
-                  }}
-                  onKeyDown={(e) => {
-                    if (
-                      e.key === "Enter" &&
-                      !e.shiftKey &&
-                      !e.nativeEvent.isComposing
-                    ) {
-                      e.preventDefault();
-                      handleAgentSubmit(e as unknown as React.FormEvent);
-                      setTextareaHeight("auto"); // Reset height on Enter submission
+              <div className="flex-1 flex flex-col">
+                <div className="relative">
+                  <Textarea
+                    disabled={pendingToolCallConfirmation}
+                    placeholder={
+                      pendingToolCallConfirmation
+                        ? "Please respond to the tool confirmation above..."
+                        : "Send a message..."
                     }
-                  }}
-                  rows={2}
-                  style={{ height: textareaHeight }}
-                />
-                <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
-                  {status === "submitted" || status === "streaming" ? (
+                    className="flex w-full border border-neutral-200 dark:border-neutral-700 px-3 py-2 ring-offset-background placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 dark:focus-visible:ring-neutral-700 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm min-h-[96px] max-h-[40vh] resize-none rounded-2xl !text-base pb-10 dark:bg-neutral-900 overflow-y-auto"
+                    value={agentInput}
+                    onChange={(e) => {
+                      handleAgentInputChange(e);
+                    }}
+                    onKeyDown={(e) => {
+                      if (
+                        e.key === "Enter" &&
+                        !e.shiftKey &&
+                        !e.nativeEvent.isComposing
+                      ) {
+                        e.preventDefault();
+                        handleAgentSubmit(e as unknown as React.FormEvent);
+                      }
+                    }}
+                    rows={4}
+                  />
+                  <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end gap-2">
                     <button
                       type="button"
-                      onClick={stop}
-                      className="inline-flex items-center cursor-pointer justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full p-1.5 h-fit border border-neutral-200 dark:border-neutral-800"
-                      aria-label="Stop generation"
+                      onClick={handleVoiceInputToggle}
+                      disabled={!isSpeechSupported || pendingToolCallConfirmation}
+                      className="inline-flex items-center cursor-pointer justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary/80 text-primary-foreground hover:bg-primary rounded-full p-1.5 h-fit border border-neutral-200 dark:border-neutral-800"
+                      aria-pressed={isListening}
+                      aria-label={
+                        !isSpeechSupported
+                          ? "Voice input not supported in this browser"
+                          : isListening
+                            ? "Stop voice input"
+                            : "Start voice input"
+                      }
                     >
-                      <Stop size={16} />
+                      {isListening ? <MicrophoneSlash size={16} /> : <Microphone size={16} />}
                     </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      className="inline-flex items-center cursor-pointer justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full p-1.5 h-fit border border-neutral-200 dark:border-neutral-800"
-                      disabled={pendingToolCallConfirmation || !agentInput.trim()}
-                      aria-label="Send message"
-                    >
-                      <PaperPlaneTilt size={16} />
-                    </button>
-                  )}
+                    {status === "submitted" || status === "streaming" ? (
+                      <button
+                        type="button"
+                        onClick={stop}
+                        className="inline-flex items-center cursor-pointer justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full p-1.5 h-fit border border-neutral-200 dark:border-neutral-800"
+                        aria-label="Stop generation"
+                      >
+                        <Stop size={16} />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className="inline-flex items-center cursor-pointer justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full p-1.5 h-fit border border-neutral-200 dark:border-neutral-800"
+                        disabled={pendingToolCallConfirmation || !agentInput.trim()}
+                        aria-label="Send message"
+                      >
+                        <PaperPlaneTilt size={16} />
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {speechError && (
+                  <p className="text-xs text-red-500 mt-2">{speechError}</p>
+                )}
               </div>
             </div>
           </form>

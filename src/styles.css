@@ -311,3 +311,57 @@
     transform: rotate(360deg) scale(0.9);
   }
 }
+
+@media (orientation: landscape) {
+  html,
+  body {
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+
+  #app {
+    height: 100%;
+    width: 100%;
+  }
+
+  /* Ensure the wrapper div in client.tsx takes full height */
+  #app > div {
+    height: 100%;
+  }
+
+  .app-shell {
+    height: 100% !important;
+    width: 100%;
+    padding: 1rem; /* Keep padding but ensure it fits in viewport */
+    overflow: hidden; /* Prevent shell scrolling */
+  }
+
+  .app-content {
+    height: 100%;
+    min-height: 0; /* CRITICAL: Allows flex child to shrink and scroll */
+    width: 100%;
+    max-width: none; /* Override max-w-5xl to fill screen */
+    margin: 0;
+    
+    display: grid;
+    grid-template-columns: minmax(300px, 320px) 1fr; /* Reduce min width slightly for smaller phones */
+    gap: 1rem;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .chat-panel {
+    height: 100%;
+    width: 100%;
+    min-width: 0; /* Prevent flex item blowout */
+  }
+
+  .chat-panel .messages-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+}
