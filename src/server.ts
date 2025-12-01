@@ -22,7 +22,7 @@ import { env } from "cloudflare:workers";
 const workersai = createWorkersAI({ binding: env.AI });
 
 // const model = openai("gpt-4o-2024-11-20");
-const model = workersai("@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+const model = workersai("@cf/meta/llama-4-scout-17b-16e-instruct");
 // Cloudflare AI Gateway
 // const openai = createOpenAI({
 //   apiKey: env.OPENAI_API_KEY,
