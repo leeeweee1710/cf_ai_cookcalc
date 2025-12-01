@@ -1,10 +1,19 @@
 /** biome-ignore-all lint/correctness/useUniqueElementIds: it's alright */
-import { useEffect, useState, useRef, useCallback, use } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  use
+} from "react";
 import { useAgent } from "agents/react";
 import { isToolUIPart } from "ai";
 import { useAgentChat } from "agents/ai-react";
 import type { UIMessage } from "@ai-sdk/react";
 import type { tools } from "./tools";
+import type { AgentSharedState, TimerSharedState } from "./shared";
+import { createDefaultAgentState, createDefaultTimerState } from "./shared";
 
 // Component imports
 import { Button } from "@/components/button/Button";
@@ -31,6 +40,11 @@ import {
 const toolsRequiringConfirmation: (keyof typeof tools)[] = [
   "getWeatherInformation"
 ];
+
+const PRESET_TIMERS = [
+  { label: "Rice", minutes: 10 },
+  { label: "Pasta", minutes: 12 }
+] as const;
 
 const ID_PARAM = "id";
 const ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz";
@@ -62,6 +76,20 @@ const ensureAgentId = () => {
   return id;
 };
 
+const getTimerDisplayMs = (timer: TimerSharedState) =>
+  timer.status === "running" && timer.deadline
+    ? Math.max(0, timer.deadline - Date.now())
+    : timer.remainingMs;
+
+const formatCountdown = (ms: number) => {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${seconds
+    .toString()
+    .padStart(2, "0")}`;
+};
+
 export default function Chat() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     // Check localStorage first, default to dark if not found
@@ -71,6 +99,12 @@ export default function Chat() {
   const [agentId] = useState<string>(() => ensureAgentId());
   const [showDebug, setShowDebug] = useState(false);
   const [textareaHeight, setTextareaHeight] = useState("auto");
+  const [timerState, setTimerState] = useState<TimerSharedState>(() =>
+    createDefaultTimerState()
+  );
+  const [displayMs, setDisplayMs] = useState(timerState.remainingMs);
+  const [customMinutes, setCustomMinutes] = useState("5");
+  const [customSeconds, setCustomSeconds] = useState("0");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -101,9 +135,18 @@ export default function Chat() {
     setTheme(newTheme);
   };
 
-  const agent = useAgent({
+  const agent = useAgent<AgentSharedState | undefined>({
     agent: "chat",
-    name: agentId
+    name: agentId,
+    onStateUpdate: (incomingState) => {
+      const fallbackTimer = createDefaultAgentState().timer;
+      const timerFromState =
+        incomingState && "timer" in incomingState && incomingState.timer
+          ? incomingState.timer
+          : fallbackTimer;
+      setTimerState(timerFromState);
+      setDisplayMs(getTimerDisplayMs(timerFromState));
+    }
   });
 
   const [agentInput, setAgentInput] = useState("");
@@ -135,6 +178,22 @@ export default function Chat() {
     );
   };
 
+  const syncTimerState = useCallback(
+    (updater: (prev: TimerSharedState) => TimerSharedState) => {
+      setTimerState((prev) => {
+        const next = updater(prev);
+        const normalized: TimerSharedState = {
+          ...next,
+          updatedAt: Date.now()
+        };
+        setDisplayMs(getTimerDisplayMs(normalized));
+        agent.setState({ timer: normalized });
+        return normalized;
+      });
+    },
+    [agent]
+  );
+
   const {
     messages: agentMessages,
     addToolResult,
@@ -163,6 +222,148 @@ export default function Chat() {
     )
   );
 
+  useEffect(() => {
+    if (timerState.status !== "running" || !timerState.deadline) {
+      return;
+    }
+    const activeDeadline = timerState.deadline;
+    const tick = () => {
+      const msLeft = Math.max(0, activeDeadline - Date.now());
+      setDisplayMs(msLeft);
+      if (msLeft <= 0) {
+        syncTimerState((prev) => ({
+          ...prev,
+          status: "finished",
+          remainingMs: 0,
+          deadline: undefined
+        }));
+      }
+    };
+    tick();
+    const interval = window.setInterval(tick, 250);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [timerState.status, timerState.deadline, syncTimerState]);
+
+  const customDurationMs = useMemo(() => {
+    const minutesValue =
+      Math.max(0, Number.parseInt(customMinutes || "0", 10)) || 0;
+    const secondsValue = Math.max(
+      0,
+      Math.min(59, Number.parseInt(customSeconds || "0", 10)) || 0
+    );
+    return (minutesValue * 60 + secondsValue) * 1000;
+  }, [customMinutes, customSeconds]);
+
+  const handlePresetSelect = useCallback(
+    (minutes: number, label: string) => {
+      const totalMs = minutes * 60 * 1000;
+      if (totalMs <= 0) return;
+      syncTimerState(() => ({
+        ...createDefaultTimerState(),
+        status: "paused",
+        totalMs,
+        remainingMs: totalMs,
+        label
+      }));
+    },
+    [syncTimerState]
+  );
+
+  const handleStart = useCallback(() => {
+    syncTimerState((prev) => {
+      if (prev.status === "running") return prev;
+      const baseline =
+        prev.remainingMs > 0 ? prev.remainingMs : Math.max(prev.totalMs, 0);
+      if (baseline <= 0) {
+        return prev.totalMs === 0 ? createDefaultTimerState() : prev;
+      }
+      return {
+        ...prev,
+        status: "running",
+        remainingMs: baseline,
+        deadline: Date.now() + baseline
+      };
+    });
+  }, [syncTimerState]);
+
+  const handlePause = useCallback(() => {
+    syncTimerState((prev) => {
+      if (prev.status !== "running") return prev;
+      const remaining = prev.deadline
+        ? Math.max(0, prev.deadline - Date.now())
+        : prev.remainingMs;
+      return {
+        ...prev,
+        status: "paused",
+        remainingMs: remaining,
+        deadline: undefined
+      };
+    });
+  }, [syncTimerState]);
+
+  const handleReset = useCallback(() => {
+    syncTimerState((prev) => {
+      if (prev.totalMs === 0) {
+        return createDefaultTimerState();
+      }
+      return {
+        ...prev,
+        status: "paused",
+        remainingMs: prev.totalMs,
+        deadline: undefined
+      };
+    });
+  }, [syncTimerState]);
+
+  const handleCustomTimeSet = useCallback(() => {
+    if (customDurationMs <= 0) return;
+    syncTimerState(() => ({
+      ...createDefaultTimerState(),
+      status: "paused",
+      totalMs: customDurationMs,
+      remainingMs: customDurationMs,
+      label: "Custom"
+    }));
+  }, [customDurationMs, syncTimerState]);
+
+  const handleMinutesChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      if (/^\d*$/.test(value)) {
+        setCustomMinutes(value);
+      }
+    },
+    []
+  );
+
+  const handleSecondsChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      if (value === "") {
+        setCustomSeconds("");
+        return;
+      }
+      if (/^\d*$/.test(value)) {
+        const normalized = Math.min(59, Number.parseInt(value, 10));
+        setCustomSeconds(normalized.toString());
+      }
+    },
+    []
+  );
+
+  const formattedTimer = formatCountdown(displayMs);
+  const timerStatusLabel =
+    timerState.status.charAt(0).toUpperCase() + timerState.status.slice(1);
+  const canStart =
+    timerState.status !== "running" &&
+    (timerState.remainingMs > 0 || timerState.totalMs > 0);
+  const canPause = timerState.status === "running";
+  const canReset =
+    timerState.totalMs > 0 || timerState.status === "finished";
+  const canApplyCustom = customDurationMs > 0;
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
@@ -170,8 +371,132 @@ export default function Chat() {
   return (
     <div className="h-[100vh] w-full p-4 flex justify-center items-center bg-fixed overflow-hidden">
       {/* <HasOpenAIKey /> */}
-      <div className="h-[calc(100vh-2rem)] w-full mx-auto max-w-lg flex flex-col shadow-xl rounded-md overflow-hidden relative border border-neutral-300 dark:border-neutral-800">
-        <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 flex items-center gap-3 sticky top-0 z-10">
+      <div className="w-full max-w-xl flex flex-col gap-4 h-full">
+        <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-4 py-4 shadow">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Shared Cooking Timer
+                </p>
+                <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  {timerStatusLabel}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Linked to ID{" "}
+                  <span className="font-mono text-sm">{agentId}</span>
+                </p>
+              </div>
+              <div className="text-4xl sm:text-5xl font-mono text-neutral-900 dark:text-neutral-50">
+                {formattedTimer}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!canStart}
+                onClick={handleStart}
+              >
+                Start
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!canPause}
+                onClick={handlePause}
+              >
+                Pause
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!canReset}
+                onClick={handleReset}
+              >
+                Reset
+              </Button>
+            </div>
+
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Common Times
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {PRESET_TIMERS.map((preset) => (
+                  <Button
+                    key={preset.label}
+                    size="sm"
+                    variant={
+                      timerState.label === preset.label &&
+                      timerState.totalMs > 0
+                        ? "primary"
+                        : "tertiary"
+                    }
+                    onClick={() =>
+                      handlePresetSelect(preset.minutes, preset.label)
+                    }
+                  >
+                    {preset.label} ({preset.minutes} min)
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Custom Time
+              </p>
+              <div className="flex flex-wrap items-end gap-3 mt-2">
+                <label className="flex flex-col text-xs font-semibold text-muted-foreground">
+                  Minutes
+                  <input
+                    type="number"
+                    min="0"
+                    className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+                    value={customMinutes}
+                    onChange={handleMinutesChange}
+                  />
+                </label>
+                <label className="flex flex-col text-xs font-semibold text-muted-foreground">
+                  Seconds
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+                    value={customSeconds}
+                    onChange={handleSecondsChange}
+                  />
+                </label>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={!canApplyCustom}
+                  onClick={handleCustomTimeSet}
+                >
+                  Set Custom Time
+                </Button>
+              </div>
+            </div>
+
+            {timerState.status === "finished" && (
+              <p className="text-xs text-green-600 dark:text-green-400">
+                Timer complete! Reset or select another time to restart.
+              </p>
+            )}
+            {timerState.totalMs === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Pick a preset or enter a custom time to begin. Everyone using
+                this ID will see the same countdown.
+              </p>
+            )}
+          </div>
+        </Card>
+
+        <div className="flex-1 w-full mx-auto flex flex-col shadow-xl rounded-md overflow-hidden relative border border-neutral-300 dark:border-neutral-800">
+          <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 flex items-center gap-3 sticky top-0 z-10 bg-white/80 dark:bg-neutral-900/80 backdrop-blur">
           <div className="flex items-center justify-center h-8 w-8">
             <svg
               width="28px"
@@ -222,10 +547,11 @@ export default function Chat() {
           >
             <Trash size={20} />
           </Button>
+          </div>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24 max-h-[calc(100vh-10rem)]">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
           {agentMessages.length === 0 && (
             <div className="h-full flex items-center justify-center">
               <Card className="p-6 max-w-md mx-auto bg-neutral-100 dark:bg-neutral-900">

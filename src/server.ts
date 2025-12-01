@@ -18,6 +18,10 @@ import { createWorkersAI } from 'workers-ai-provider';
 import { processToolCalls, cleanupMessages } from "./utils";
 import { tools, executions } from "./tools";
 import { env } from "cloudflare:workers";
+import {
+  createDefaultAgentState,
+  type AgentSharedState
+} from "./shared";
 
 const workersai = createWorkersAI({ binding: env.AI });
 
@@ -32,7 +36,8 @@ const model = workersai("@cf/meta/llama-4-scout-17b-16e-instruct");
 /**
  * Chat Agent implementation that handles real-time AI chat interactions
  */
-export class Chat extends AIChatAgent<Env> {
+export class Chat extends AIChatAgent<Env, AgentSharedState> {
+  initialState = createDefaultAgentState();
   /**
    * Handles incoming chat messages and manages the response stream
    */
