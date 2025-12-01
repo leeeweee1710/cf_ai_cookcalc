@@ -32,12 +32,43 @@ const toolsRequiringConfirmation: (keyof typeof tools)[] = [
   "getWeatherInformation"
 ];
 
+const ID_PARAM = "id";
+const ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+const ID_LENGTH = 6;
+
+const createRandomId = () => {
+  let id = "";
+  for (let i = 0; i < ID_LENGTH; i += 1) {
+    const index = Math.floor(Math.random() * ID_ALPHABET.length);
+    id += ID_ALPHABET[index];
+  }
+  return id;
+};
+
+const ensureAgentId = () => {
+  if (typeof window === "undefined") {
+    return createRandomId();
+  }
+
+  const url = new URL(window.location.href);
+  let id = url.searchParams.get(ID_PARAM);
+
+  if (!id) {
+    id = createRandomId();
+    url.searchParams.set(ID_PARAM, id);
+    window.history.replaceState(null, "", url.toString());
+  }
+
+  return id;
+};
+
 export default function Chat() {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     // Check localStorage first, default to dark if not found
     const savedTheme = localStorage.getItem("theme");
     return (savedTheme as "dark" | "light") || "dark";
   });
+  const [agentId] = useState<string>(() => ensureAgentId());
   const [showDebug, setShowDebug] = useState(false);
   const [textareaHeight, setTextareaHeight] = useState("auto");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -71,7 +102,8 @@ export default function Chat() {
   };
 
   const agent = useAgent({
-    agent: "chat"
+    agent: "chat",
+    name: agentId
   });
 
   const [agentInput, setAgentInput] = useState("");
