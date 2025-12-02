@@ -18,7 +18,6 @@ A smart cooking calculator using Cloudflare's Agent platform, based on [`agents-
 ## Prerequisites
 
 - Cloudflare account
-- OpenAI API key
 
 ## Quick Start
 
