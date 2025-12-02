@@ -33,6 +33,34 @@ const getLocalTime = tool({
   }
 });
 
+const addGroceryItem = tool({
+  description: "Add an item to the grocery/fridge list",
+  inputSchema: z.object({
+    name: z.string().describe("The name of the item"),
+    quantity: z.string().describe("The quantity of the item (e.g. '2', '1kg')"),
+    expiryDate: z.string().optional().describe("The expiry date of the item (YYYY-MM-DD)")
+  }),
+  execute: async ({ name, quantity, expiryDate }) => {
+    const { agent } = getCurrentAgent<Chat>();
+    const newItem = {
+      id: crypto.randomUUID(),
+      name,
+      quantity,
+      expiryDate
+    };
+    
+    const currentState = agent!.state;
+    const newList = [...(currentState.groceryList || []), newItem];
+    
+    agent!.setState({
+      ...currentState,
+      groceryList: newList
+    });
+    
+    return `Added ${name} (Qty: ${quantity}) to grocery list.`;
+  }
+});
+
 const scheduleTask = tool({
   description: "A tool to schedule a task to be executed at a later time",
   inputSchema: scheduleSchema,
@@ -117,7 +145,8 @@ export const tools = {
   getLocalTime,
   scheduleTask,
   getScheduledTasks,
-  cancelScheduledTask
+  cancelScheduledTask,
+  addGroceryItem
 } satisfies ToolSet;
 
 /**

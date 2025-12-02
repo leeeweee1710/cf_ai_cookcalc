@@ -12,7 +12,7 @@ import { isToolUIPart } from "ai";
 import { useAgentChat } from "agents/ai-react";
 import type { UIMessage } from "@ai-sdk/react";
 import type { tools } from "./tools";
-import type { AgentSharedState, TimerSharedState } from "./shared";
+import type { AgentSharedState, TimerSharedState, GroceryItem } from "./shared";
 import { createDefaultAgentState, createDefaultTimerState } from "./shared";
 
 // Component imports
@@ -24,6 +24,7 @@ import { Textarea } from "@/components/textarea/Textarea";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { ToolInvocationCard } from "@/components/tool-invocation-card/ToolInvocationCard";
 import { IngredientsCalculator } from "@/components/ingredients-calculator/IngredientsCalculator";
+import { FridgeTracker } from "@/components/fridge-tracker/FridgeTracker";
 
 // Icon imports
 import {
@@ -154,6 +155,7 @@ export default function Chat() {
   const [timerState, setTimerState] = useState<TimerSharedState>(() =>
     createDefaultTimerState()
   );
+  const [groceryList, setGroceryList] = useState<GroceryItem[]>([]);
   const [displayMs, setDisplayMs] = useState(timerState.remainingMs);
   const [customMinutes, setCustomMinutes] = useState("5");
   const [customSeconds, setCustomSeconds] = useState("0");
@@ -210,6 +212,12 @@ export default function Chat() {
           : fallbackTimer;
       setTimerState(timerFromState);
       setDisplayMs(getTimerDisplayMs(timerFromState));
+
+      const groceryListFromState =
+        incomingState && "groceryList" in incomingState && incomingState.groceryList
+          ? incomingState.groceryList
+          : [];
+      setGroceryList(groceryListFromState);
     }
   });
 
@@ -310,6 +318,29 @@ export default function Chat() {
       }
     );
   };
+
+  const handleAddGroceryItem = useCallback(
+    (item: Omit<GroceryItem, "id">) => {
+      const newItem: GroceryItem = { ...item, id: crypto.randomUUID() };
+      setGroceryList((prev) => {
+        const newList = [...prev, newItem];
+        agent.setState({ groceryList: newList });
+        return newList;
+      });
+    },
+    [agent]
+  );
+
+  const handleRemoveGroceryItem = useCallback(
+    (id: string) => {
+      setGroceryList((prev) => {
+        const newList = prev.filter((item) => item.id !== id);
+        agent.setState({ groceryList: newList });
+        return newList;
+      });
+    },
+    [agent]
+  );
 
   const syncTimerState = useCallback(
     (updater: (prev: TimerSharedState) => TimerSharedState) => {
@@ -504,11 +535,24 @@ export default function Chat() {
   return (
     <div className="app-shell min-h-dvh h-dvh w-full p-4 flex justify-center items-stretch bg-fixed">
       {/* <HasOpenAIKey /> */}
-      <div className="app-content w-full max-w-5xl flex-1 h-full mx-auto flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(320px,380px)_1fr] lg:items-stretch lg:overflow-hidden">
-        <div className="flex flex-col gap-4 h-full overflow-hidden">
+      <div className="app-content w-full max-w-5xl flex-1 h-full mx-auto flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(280px,340px)_minmax(260px,320px)_1fr] lg:[grid-template-rows:minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch lg:overflow-hidden">
+        <div className="panel panel-ingredients order-1 flex flex-col min-h-0 h-full overflow-hidden">
           <div className="flex-1 min-h-0">
-             <IngredientsCalculator />
+            <IngredientsCalculator />
           </div>
+        </div>
+
+        <div className="panel panel-fridge order-2 flex flex-col min-h-0 h-full overflow-hidden">
+          <div className="flex-1 min-h-0">
+            <FridgeTracker
+              items={groceryList}
+              onAddItem={handleAddGroceryItem}
+              onRemoveItem={handleRemoveGroceryItem}
+            />
+          </div>
+        </div>
+
+        <div className="panel panel-timer order-3 flex flex-col min-h-0 h-full overflow-hidden">
           <div className="flex-1 min-h-0">
             <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-0 py-0 shadow overflow-hidden flex flex-col h-full">
               <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/80 backdrop-blur">
@@ -639,7 +683,7 @@ export default function Chat() {
           </div>
         </div>
 
-        <Card className="chat-panel flex-1 min-h-0 h-full w-full mx-auto flex flex-col shadow-xl rounded-xl overflow-hidden border border-neutral-300 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur p-0">
+        <Card className="chat-panel order-4 flex-1 min-h-0 h-full w-full mx-auto flex flex-col shadow-xl rounded-xl overflow-hidden border border-neutral-300 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur p-0">
           <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 flex items-center gap-3 sticky top-0 z-10 bg-white/90 dark:bg-neutral-900/80 backdrop-blur">
             {/* <div className="flex items-center justify-center h-8 w-8">
               <svg

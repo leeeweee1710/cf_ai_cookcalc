@@ -345,18 +345,39 @@
     width: 100%;
     max-width: none; /* Override max-w-5xl to fill screen */
     margin: 0;
-    
     display: grid;
-    grid-template-columns: minmax(300px, 320px) 1fr; /* Reduce min width slightly for smaller phones */
+    grid-template-columns: minmax(280px, 340px) minmax(260px, 320px) 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
     gap: 1rem;
     align-items: stretch;
     overflow: hidden;
+  }
+
+  .app-content .panel {
+    min-height: 0;
+  }
+
+  .app-content .panel-ingredients {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .app-content .panel-timer {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .app-content .panel-fridge {
+    grid-column: 2;
+    grid-row: 1 / span 2;
   }
 
   .chat-panel {
     height: 100%;
     width: 100%;
     min-width: 0; /* Prevent flex item blowout */
+    grid-column: 3;
+    grid-row: 1 / span 2;
   }
 
   .chat-panel .messages-container {
