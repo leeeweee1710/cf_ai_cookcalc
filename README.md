@@ -4,16 +4,13 @@
 
 <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/leeeweee1710/cf_ai_cookcalc"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"/></a>
 
-A smart cooking calculator using Cloudflare's Agent platform, based on [`agents-starter`](https://github.com/cloudflare/agents-starter).
+A smart cooking calculator using Cloudflare's Agent platform, based on [`agents-starter`](https://github.com/cloudflare/agents-starter). An instance is deployed [here](https://cookcalc.leeeweee.workers.dev/).
 
 ## Features
 
-- 💬 Interactive chat interface with AI and voice input
-- 🛠️ Built-in tool system to help with tasks
-- 🌓 Dark/Light theme support
-- ⚡️ Real-time streaming responses
-- 🔄 Sync state and chat history with sharable ID
-- 🎨 Modern, responsive UI
+- 💬 Interactive chat with AI and voice input
+- 🛠️ AI can interact with the components directly
+- 🔄 Sync state and chat history just by sharing URL
 
 ## Prerequisites
 

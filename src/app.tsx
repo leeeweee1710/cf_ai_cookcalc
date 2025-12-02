@@ -155,8 +155,6 @@ export default function Chat() {
   );
   const [groceryList, setGroceryList] = useState<GroceryItem[]>([]);
   const [displayMs, setDisplayMs] = useState(timerState.remainingMs);
-  const [customMinutes, setCustomMinutes] = useState("5");
-  const [customSeconds, setCustomSeconds] = useState("0");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const [isSpeechSupported, setIsSpeechSupported] = useState(false);
@@ -467,56 +465,53 @@ export default function Chat() {
     });
   }, [syncTimerState]);
 
-  const updateCustomTimer = useCallback(
-    (minutesStr: string, secondsStr: string) => {
-      const minutesValue =
-        Math.max(0, Number.parseInt(minutesStr || "0", 10)) || 0;
-      const secondsValue =
-        Math.max(0, Math.min(59, Number.parseInt(secondsStr || "0", 10))) || 0;
-      const totalMs = (minutesValue * 60 + secondsValue) * 1000;
+  const handleClear = useCallback(() => {
+    syncTimerState(() => createDefaultTimerState());
+  }, [syncTimerState]);
 
-      if (totalMs <= 0) {
-        syncTimerState(() => createDefaultTimerState());
-        return;
-      }
+  const handleAddTime = useCallback(
+    (msToAdd: number) => {
+      syncTimerState((prev) => {
+        // If the timer is fresh (totalMs === 0), treat it as setting a new timer
+        if (prev.totalMs === 0) {
+          if (msToAdd <= 0) return prev;
+          return {
+            ...createDefaultTimerState(),
+            status: "paused",
+            totalMs: msToAdd,
+            remainingMs: msToAdd,
+            label: "Custom"
+          };
+        }
 
-      syncTimerState(() => ({
-        ...createDefaultTimerState(),
-        status: "paused",
-        totalMs,
-        remainingMs: totalMs,
-        label: "Custom"
-      }));
+        const newRemaining = prev.remainingMs + msToAdd;
+        const newTotal = prev.totalMs + msToAdd;
+
+        if (newRemaining <= 0) {
+          return createDefaultTimerState();
+        }
+
+        // If running, extend deadline
+        if (prev.status === "running") {
+          return {
+            ...prev,
+            totalMs: newTotal > 0 ? newTotal : 0,
+            remainingMs: newRemaining,
+            deadline: (prev.deadline || Date.now()) + msToAdd
+          };
+        }
+
+        // If paused or finished, go to paused
+        return {
+          ...prev,
+          status: "paused",
+          totalMs: newTotal > 0 ? newTotal : 0,
+          remainingMs: newRemaining,
+          deadline: undefined
+        };
+      });
     },
     [syncTimerState]
-  );
-
-  const handleMinutesChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value;
-      if (/^\d*$/.test(value)) {
-        setCustomMinutes(value);
-        updateCustomTimer(value, customSeconds);
-      }
-    },
-    [customSeconds, updateCustomTimer]
-  );
-
-  const handleSecondsChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value;
-      if (value === "") {
-        setCustomSeconds("");
-        updateCustomTimer(customMinutes, "");
-        return;
-      }
-      if (/^\d*$/.test(value)) {
-        const normalized = Math.min(59, Number.parseInt(value, 10));
-        setCustomSeconds(normalized.toString());
-        updateCustomTimer(customMinutes, normalized.toString());
-      }
-    },
-    [customMinutes, updateCustomTimer]
   );
 
   const formattedTimer = formatCountdown(displayMs);
@@ -630,30 +625,73 @@ export default function Chat() {
 
                   <div>
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Custom Time
+                      Add Time
                     </p>
-                    <div className="flex flex-wrap items-end gap-3 mt-2">
-                      <label className="flex flex-col text-xs font-semibold text-muted-foreground">
-                        Minutes
-                        <input
-                          type="number"
-                          min="0"
-                          className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
-                          value={customMinutes}
-                          onChange={handleMinutesChange}
-                        />
-                      </label>
-                      <label className="flex flex-col text-xs font-semibold text-muted-foreground">
-                        Seconds
-                        <input
-                          type="number"
-                          min="0"
-                          max="59"
-                          className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
-                          value={customSeconds}
-                          onChange={handleSecondsChange}
-                        />
-                      </label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        variant="tertiary"
+                        onClick={() => handleAddTime(30 * 60 * 1000)}
+                      >
+                        +30 min
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="tertiary"
+                        onClick={() => handleAddTime(5 * 60 * 1000)}
+                      >
+                        +5 min
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="tertiary"
+                        onClick={() => handleAddTime(1 * 60 * 1000)}
+                      >
+                        +1 min
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="tertiary"
+                        onClick={() => handleAddTime(30 * 1000)}
+                      >
+                        +30 sec
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="tertiary"
+                        onClick={() => handleAddTime(-30 * 60 * 1000)}
+                      >
+                        -30 min
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="tertiary"
+                        onClick={() => handleAddTime(-5 * 60 * 1000)}
+                      >
+                        -5 min
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="tertiary"
+                        onClick={() => handleAddTime(-1 * 60 * 1000)}
+                      >
+                        -1 min
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="tertiary"
+                        onClick={() => handleAddTime(-30 * 1000)}
+                      >
+                        -30 sec
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        onClick={handleClear}
+                      >
+                        Clear
+                      </Button>
                     </div>
                   </div>
 
