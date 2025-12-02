@@ -517,7 +517,7 @@ export default function Chat() {
               <div className="p-4 flex flex-col gap-4 flex-1 overflow-y-auto">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div>
+                    {/* <div>
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">
                         Shared Cooking Timer
                       </p>
@@ -528,7 +528,7 @@ export default function Chat() {
                         Linked to ID{" "}
                         <span className="font-mono text-sm">{agentId}</span>
                       </p>
-                    </div>
+                    </div> */}
                     <div className="text-4xl sm:text-5xl font-mono text-neutral-900 dark:text-neutral-50">
                       {formattedTimer}
                     </div>
@@ -630,8 +630,7 @@ export default function Chat() {
                   )}
                   {timerState.totalMs === 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Pick a preset or enter a custom time to begin. Everyone using
-                      this ID will see the same countdown.
+                      Pick a preset or enter a custom time to begin.
                     </p>
                   )}
                 </div>
