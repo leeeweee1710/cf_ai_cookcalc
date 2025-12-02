@@ -34,31 +34,78 @@ import type { TimerSharedState } from "./shared";
 //   }
 // });
 
-const addGroceryItem = tool({
-  description: "Add an item to the grocery/fridge list",
+const addGroceryItems = tool({
+  description: "Add one or more items to the grocery/fridge list",
   inputSchema: z.object({
-    name: z.string().describe("The name of the item"),
-    quantity: z.string().describe("The quantity of the item (e.g. '2', '1kg')"),
-    expiryDate: z.string().optional().describe("The expiry date of the item (YYYY-MM-DD)")
+    items: z.array(z.object({
+      name: z.string().describe("The name of the item"),
+      quantity: z.string().describe("The quantity of the item (e.g. '2', '1kg')"),
+      expiryDate: z.string().optional().describe("The expiry date of the item (YYYY-MM-DD)")
+    })).describe("List of items to add")
   }),
-  execute: async ({ name, quantity, expiryDate }) => {
+  execute: async ({ items }) => {
     const { agent } = getCurrentAgent<Chat>();
-    const newItem = {
+    const newItems = items.map(item => ({
       id: crypto.randomUUID(),
-      name,
-      quantity,
-      expiryDate
-    };
+      name: item.name,
+      quantity: item.quantity,
+      expiryDate: item.expiryDate
+    }));
     
     const currentState = agent!.state;
-    const newList = [...(currentState.groceryList || []), newItem];
+    const newList = [...(currentState.groceryList || []), ...newItems];
     
     agent!.setState({
       ...currentState,
       groceryList: newList
     });
     
-    return `Added ${name} (Qty: ${quantity}) to grocery list.`;
+    return `Added ${items.length} items to grocery list: ${newItems.map(i => `${i.name} (${i.quantity})`).join(", ")}`;
+  }
+});
+
+const listGroceryItems = tool({
+  description: "List all items in the grocery/fridge list",
+  inputSchema: z.object({}),
+  execute: async () => {
+    const { agent } = getCurrentAgent<Chat>();
+    const list = agent!.state.groceryList || [];
+    
+    if (list.length === 0) {
+      return "The grocery list is empty.";
+    }
+    
+    return list.map(item => 
+      `- ${item.name} (Qty: ${item.quantity})${item.expiryDate ? ` [Expires: ${item.expiryDate}]` : ''}`
+    ).join("\n");
+  }
+});
+
+const deleteGroceryItem = tool({
+  description: "Delete an item from the grocery/fridge list by name",
+  inputSchema: z.object({
+    name: z.string().describe("The name of the item to delete")
+  }),
+  execute: async ({ name }) => {
+    const { agent } = getCurrentAgent<Chat>();
+    const currentState = agent!.state;
+    const list = currentState.groceryList || [];
+    
+    const index = list.findIndex(item => item.name.toLowerCase() === name.toLowerCase());
+    
+    if (index === -1) {
+      return `Item "${name}" not found in the grocery list.`;
+    }
+    
+    const removedItem = list[index];
+    const newList = [...list.slice(0, index), ...list.slice(index + 1)];
+    
+    agent!.setState({
+      ...currentState,
+      groceryList: newList
+    });
+    
+    return `Removed ${removedItem.name} from grocery list.`;
   }
 });
 
@@ -187,7 +234,9 @@ export const tools = {
   // scheduleTask,
   // getScheduledTasks,
   // cancelScheduledTask,
-  addGroceryItem,
+  addGroceryItems,
+  listGroceryItems,
+  deleteGroceryItem,
   setTimer
 } satisfies ToolSet;
 
