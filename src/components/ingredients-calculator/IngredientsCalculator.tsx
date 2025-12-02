@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/card/Card";
 
 type UnitType = "mass" | "volume";
@@ -113,55 +113,106 @@ const INGREDIENTS = [
   },
 ];
 
+const calculateValue = (amountVal: number, fromId: string, toId: string, ingredientVal: number) => {
+    const fromUnit = UNITS.find((u) => u.id === fromId);
+    const toUnit = UNITS.find((u) => u.id === toId);
+    if (!fromUnit || !toUnit) return 0;
+
+    if (fromUnit.type === toUnit.type) {
+        const base = fromUnit.toBase(amountVal);
+        return toUnit.fromBase(base);
+    }
+
+    if (ingredientVal === -1) return 0;
+
+    let grams = 0;
+    if (fromUnit.type === "mass") {
+      grams = fromUnit.toBase(amountVal);
+    } else {
+      const cups = fromUnit.toBase(amountVal);
+      grams = cups * ingredientVal;
+    }
+
+    if (toUnit.type === "mass") {
+      return toUnit.fromBase(grams);
+    } else {
+      const cups = grams / ingredientVal;
+      return toUnit.fromBase(cups);
+    }
+};
+
+const formatCups = (val: number): string | null => {
+    const cupsInt = Math.floor(val);
+    const remainder = val - cupsInt;
+    const ml = remainder * 240;
+
+    let fractionStr = "";
+    if (ml < 1.875) { fractionStr = ""; }
+    else if (ml < 3.75) { fractionStr = "½ tsp"; }
+    else if (ml < 7.5) { fractionStr = "1 tsp"; }
+    else if (ml < 12.5) { fractionStr = "2 tsp"; }
+    else if (ml < 17.5) { fractionStr = "1 tbsp"; }
+    else if (ml < 22.5) { fractionStr = "1 tbsp + 1 tsp"; }
+    else if (ml < 27.5) { fractionStr = "1 tbsp + 2 tsp"; }
+    else if (ml < 32.5) { fractionStr = "2 tbsp"; }
+    else if (ml < 37.5) { fractionStr = "2 tbsp + 1 tsp"; }
+    else if (ml < 42.5) { fractionStr = "2 tbsp + 2 tsp"; }
+    else if (ml < 47.5) { fractionStr = "3 tbsp"; }
+    else if (ml < 52.5) { fractionStr = "3 tbsp + 1 tsp"; }
+    else if (ml < 57.5) { fractionStr = "3 tbsp + 2 tsp"; }
+    else if (ml < 67.5) { fractionStr = "¼ cup"; }
+    else if (ml < 82.5) { fractionStr = "¼ cup + 1 tbsp"; }
+    else if (ml < 97.5) { fractionStr = "¼ cup + 2 tbsp"; }
+    else if (ml < 112.5) { fractionStr = "¼ cup + 3 tbsp"; }
+    else if (ml < 127.5) { fractionStr = "½ cup"; }
+    else if (ml < 142.5) { fractionStr = "½ cup + 1 tbsp"; }
+    else if (ml < 157.5) { fractionStr = "½ cup + 2 tbsp"; }
+    else if (ml < 172.5) { fractionStr = "½ cup + 3 tbsp"; }
+    else if (ml < 187.5) { fractionStr = "¾ cup"; }
+    else if (ml < 202.5) { fractionStr = "¾ cup + 1 tbsp"; }
+    else if (ml < 217.5) { fractionStr = "¾ cup + 2 tbsp"; }
+    else if (ml < 232.5) { fractionStr = "¾ cup + 3 tbsp"; }
+    else if (ml < 247.5) { fractionStr = "1 cup"; }
+
+    if (cupsInt === 0 && !fractionStr) return null;
+    if (cupsInt === 0) return fractionStr;
+    if (!fractionStr) return `${cupsInt} cup${cupsInt !== 1 ? 's' : ''}`;
+    return `${cupsInt} cup${cupsInt !== 1 ? 's' : ''} + ${fractionStr}`;
+};
+
 export const IngredientsCalculator = () => {
   const [ingredientValue, setIngredientValue] = useState<number>(-1);
   const [amount, setAmount] = useState<string>("");
   const [fromUnitId, setFromUnitId] = useState<string>("grams");
   const [toUnitId, setToUnitId] = useState<string>("cups");
 
-  const result = useMemo(() => {
-    const val = parseFloat(amount);
-    if (isNaN(val) || val < 0) return "";
+  const rawResult = useMemo(() => {
+      const val = parseFloat(amount);
+      if (isNaN(val) || val < 0) return null;
+      return calculateValue(val, fromUnitId, toUnitId, ingredientValue);
+  }, [amount, fromUnitId, toUnitId, ingredientValue]);
 
+  const resultString = useMemo(() => {
+    if (rawResult === null) return "";
+    
     const fromUnit = UNITS.find((u) => u.id === fromUnitId);
     const toUnit = UNITS.find((u) => u.id === toUnitId);
 
-    if (!fromUnit || !toUnit) return "";
+    if (fromUnit?.type !== toUnit?.type && ingredientValue === -1) return "Select Ingredient";
 
-    // If same type, just convert
-    if (fromUnit.type === toUnit.type) {
-        const base = fromUnit.toBase(val);
-        const result = toUnit.fromBase(base);
-        return result.toFixed(2).replace(/\.00$/, "");
-    }
+    return rawResult.toFixed(2).replace(/\.00$/, "");
+  }, [rawResult, fromUnitId, toUnitId, ingredientValue]);
 
-    // If different type, we need density (ingredientValue)
-    // density is Grams per Cup.
-    if (ingredientValue === -1) return "Select Ingredient";
+  const breakdown = useMemo(() => {
+      if (toUnitId !== "cups" || rawResult === null) return null;
+      
+      const fromUnit = UNITS.find((u) => u.id === fromUnitId);
+      const toUnit = UNITS.find((u) => u.id === toUnitId);
 
-    let grams = 0;
-    // Convert input to Grams
-    if (fromUnit.type === "mass") {
-      grams = fromUnit.toBase(val);
-    } else {
-      // Volume to Mass
-      const cups = fromUnit.toBase(val);
-      grams = cups * ingredientValue;
-    }
+      if (fromUnit?.type !== toUnit?.type && ingredientValue === -1) return null;
 
-    // Convert Grams to output
-    let outVal = 0;
-    if (toUnit.type === "mass") {
-      outVal = toUnit.fromBase(grams);
-    } else {
-      // Mass to Volume
-      const cups = grams / ingredientValue;
-      outVal = toUnit.fromBase(cups);
-    }
-
-    return outVal.toFixed(2).replace(/\.00$/, "");
-
-  }, [amount, fromUnitId, toUnitId, ingredientValue]);
+      return formatCups(rawResult);
+  }, [rawResult, toUnitId, fromUnitId, ingredientValue]);
 
   return (
     <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-0 py-0 shadow overflow-hidden flex flex-col h-full">
@@ -170,7 +221,7 @@ export const IngredientsCalculator = () => {
       </div>
       <div className="p-4 flex flex-col gap-4 flex-1">
         <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">
+            <label className="block text-xm font-semibold text-muted-foreground mb-1">
                 Ingredient
             </label>
             <select
@@ -200,7 +251,7 @@ export const IngredientsCalculator = () => {
         <div className="flex flex-col gap-4">
             <div className="flex gap-2 items-end">
                  <div className="flex-1">
-                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    <label className="block text-xm font-semibold text-muted-foreground mb-1">
                         Amount
                     </label>
                     <input
@@ -225,11 +276,11 @@ export const IngredientsCalculator = () => {
 
             <div className="flex gap-2 items-end">
                  <div className="flex-1">
-                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
+                    <label className="block text-xm font-semibold text-muted-foreground mb-1">
                         Result
                     </label>
                     <div className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 h-[38px] flex items-center">
-                        {result || "-"}
+                        {resultString || "-"}
                     </div>
                  </div>
                  <div className="w-1/3 min-w-[100px]">
@@ -242,9 +293,14 @@ export const IngredientsCalculator = () => {
                     </select>
                  </div>
             </div>
+            
+            {breakdown && (
+                <div className="text-xm text-muted-foreground text-center bg-neutral-100 dark:bg-neutral-900/50 rounded p-2 border border-neutral-200 dark:border-neutral-800">
+                    {resultString} cups = {breakdown}
+                </div>
+            )}
         </div>
       </div>
     </Card>
   );
 };
-
