@@ -166,7 +166,9 @@ export default function Chat() {
   const [speechError, setSpeechError] = useState<string | null>(null);
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   }, []);
 
   useEffect(() => {
@@ -533,17 +535,17 @@ export default function Chat() {
   };
 
   return (
-    <div className="app-shell min-h-dvh h-dvh w-full p-4 flex justify-center items-stretch bg-fixed">
+    <div className="app-shell min-h-dvh lg:h-dvh w-full p-4 flex justify-center items-stretch bg-fixed overflow-y-auto">
       {/* <HasOpenAIKey /> */}
-      <div className="app-content w-full max-w-5xl flex-1 h-full mx-auto flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(280px,340px)_minmax(260px,320px)_1fr] lg:[grid-template-rows:minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch lg:overflow-hidden">
-        <div className="panel panel-ingredients order-1 flex flex-col min-h-0 h-full overflow-hidden">
-          <div className="flex-1 min-h-0">
+      <div className="app-content w-full max-w-5xl flex-1 lg:h-full mx-auto flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(280px,340px)_minmax(260px,320px)_1fr] lg:[grid-template-rows:minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch lg:overflow-hidden">
+        <div className="panel panel-ingredients order-1 flex flex-col min-h-0 lg:h-full overflow-hidden">
+          <div className="lg:flex-1 lg:min-h-0">
             <IngredientsCalculator />
           </div>
         </div>
 
-        <div className="panel panel-fridge order-2 flex flex-col min-h-0 h-full overflow-hidden">
-          <div className="flex-1 min-h-0">
+        <div className="panel panel-fridge order-2 flex flex-col min-h-0 lg:h-full overflow-hidden">
+          <div className="lg:flex-1 lg:min-h-0">
             <FridgeTracker
               items={groceryList}
               onAddItem={handleAddGroceryItem}
@@ -552,9 +554,9 @@ export default function Chat() {
           </div>
         </div>
 
-        <div className="panel panel-timer order-3 flex flex-col min-h-0 h-full overflow-hidden">
-          <div className="flex-1 min-h-0">
-            <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-0 py-0 shadow overflow-hidden flex flex-col h-full">
+        <div className="panel panel-timer order-3 flex flex-col min-h-0 lg:h-full overflow-hidden">
+          <div className="lg:flex-1 lg:min-h-0">
+            <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-0 py-0 shadow overflow-hidden flex flex-col lg:h-full">
               <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/80 backdrop-blur">
                 <h2 className="font-semibold text-base">Timer</h2>
               </div>
@@ -683,7 +685,7 @@ export default function Chat() {
           </div>
         </div>
 
-        <Card className="chat-panel order-4 flex-1 min-h-0 h-full w-full mx-auto flex flex-col shadow-xl rounded-xl overflow-hidden border border-neutral-300 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur p-0">
+        <Card className="chat-panel order-4 h-[600px] lg:h-full lg:flex-1 min-h-0 w-full mx-auto flex flex-col shadow-xl rounded-xl overflow-hidden border border-neutral-300 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur p-0">
           <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 flex items-center gap-3 sticky top-0 z-10 bg-white/90 dark:bg-neutral-900/80 backdrop-blur">
             {/* <div className="flex items-center justify-center h-8 w-8">
               <svg
@@ -738,7 +740,7 @@ export default function Chat() {
           </div>
 
           {/* Messages */}
-          <div className="messages-container flex-1 min-h-0 max-h-full overflow-y-auto px-4 py-4 space-y-4 bg-white/70 dark:bg-neutral-950/30">
+          <div className="messages-container flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4 bg-white/70 dark:bg-neutral-950/30">
           {agentMessages.length === 0 && (
             <div className="flex items-center justify-center py-10">
               <Card className="p-6 max-w-md mx-auto bg-neutral-100 dark:bg-neutral-900">
