@@ -652,7 +652,7 @@ export default function Chat() {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant="primary"
-                      size="sm"
+                      size="md"
                       disabled={!canStart}
                       onClick={handleStart}
                     >
@@ -660,7 +660,7 @@ export default function Chat() {
                     </Button>
                     <Button
                       variant="secondary"
-                      size="sm"
+                      size="md"
                       disabled={!canPause}
                       onClick={handlePause}
                     >
@@ -668,7 +668,7 @@ export default function Chat() {
                     </Button>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="md"
                       disabled={!canReset}
                       onClick={handleReset}
                     >
@@ -684,7 +684,7 @@ export default function Chat() {
                       {PRESET_TIMERS.map((preset) => (
                         <Button
                           key={preset.label}
-                          size="sm"
+                          size="md"
                           variant={
                             timerState.label === preset.label &&
                               timerState.totalMs > 0
@@ -707,63 +707,63 @@ export default function Chat() {
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2">
                       <Button
-                        size="sm"
+                        size="md"
                         variant="tertiary"
                         onClick={() => handleAddTime(30 * 60 * 1000)}
                       >
                         +30 min
                       </Button>
                       <Button
-                        size="sm"
+                        size="md"
                         variant="tertiary"
                         onClick={() => handleAddTime(5 * 60 * 1000)}
                       >
                         +5 min
                       </Button>
                       <Button
-                        size="sm"
+                        size="md"
                         variant="tertiary"
                         onClick={() => handleAddTime(1 * 60 * 1000)}
                       >
                         +1 min
                       </Button>
                       <Button
-                        size="sm"
+                        size="md"
                         variant="tertiary"
                         onClick={() => handleAddTime(30 * 1000)}
                       >
                         +30 sec
                       </Button>
                       <Button
-                        size="sm"
+                        size="md"
                         variant="tertiary"
                         onClick={() => handleAddTime(-30 * 60 * 1000)}
                       >
                         -30 min
                       </Button>
                       <Button
-                        size="sm"
+                        size="md"
                         variant="tertiary"
                         onClick={() => handleAddTime(-5 * 60 * 1000)}
                       >
                         -5 min
                       </Button>
                       <Button
-                        size="sm"
+                        size="md"
                         variant="tertiary"
                         onClick={() => handleAddTime(-1 * 60 * 1000)}
                       >
                         -1 min
                       </Button>
                       <Button
-                        size="sm"
+                        size="md"
                         variant="tertiary"
                         onClick={() => handleAddTime(-30 * 1000)}
                       >
                         -30 sec
                       </Button>
                       <Button
-                        size="sm"
+                        size="md"
                         variant="ghost"
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                         onClick={handleClear}
@@ -774,12 +774,12 @@ export default function Chat() {
                   </div>
 
                   {timerState.status === "finished" && (
-                    <p className="text-xs text-green-600 dark:text-green-400">
+                    <p className="text-sm text-green-600 dark:text-green-400">
                       Timer complete! Reset or select another time to restart.
                     </p>
                   )}
                   {timerState.totalMs === 0 && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       Pick a preset or enter a custom time to begin.
                     </p>
                   )}

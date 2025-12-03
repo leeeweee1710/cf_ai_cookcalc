@@ -43,7 +43,7 @@ export const ShoppingList = ({ items, onAddItem, onRemoveItem }: ShoppingListPro
                         value={newItemQuantity}
                         onChange={(e) => setNewItemQuantity(e.target.value)}
                     />
-                    <Button onClick={handleAdd} disabled={!newItemName || !newItemQuantity} variant="primary" size="sm">
+                    <Button onClick={handleAdd} disabled={!newItemName || !newItemQuantity} variant="primary" size="md">
                         <Plus size={16} />
                     </Button>
                 </div>

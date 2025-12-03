@@ -60,7 +60,7 @@ export const FridgeTracker = ({ items, onAddItem, onRemoveItem }: FridgeTrackerP
               value={newItemExpiry}
               onChange={(e) => setNewItemExpiry(e.target.value)}
             />
-            <Button onClick={handleAdd} disabled={!newItemName || !newItemQuantity} variant="primary" size="sm">
+            <Button onClick={handleAdd} disabled={!newItemName || !newItemQuantity} variant="primary" size="md">
               <Plus size={16} /> Add
             </Button>
           </div>

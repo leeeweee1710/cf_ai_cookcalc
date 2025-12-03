@@ -34,7 +34,7 @@ export const InstructionsList = ({ items, onAddItem, onRemoveItem }: Instruction
                         }
                     }}
                 />
-                <Button onClick={handleAdd} disabled={!newInstruction.trim()} variant="primary" size="sm">
+                <Button onClick={handleAdd} disabled={!newInstruction.trim()} variant="primary" size="md">
                     <Plus size={16} />
                 </Button>
             </div>
