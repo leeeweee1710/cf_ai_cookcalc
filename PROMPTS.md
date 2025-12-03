@@ -54,3 +54,10 @@ Improve AI tool interpretation for setting timers. The AI should correctly under
 - 150 seconds
 The timer should properly interpret mixed units and configure itself without forcing a conversion into whole minutes.
 ```
+
+---
+
+### 7.
+```
+Create a responsive interface with a header split into two selectable halves labeled "Shopping List" and "Instructions," where selecting either half switches the content of a shared card. The Shopping List functions the same way as the fridge-tracker list, with state that persists and updates cleanly. The Instructions view presents an ordered list of steps. Both views should animate smoothly when switching and maintain a unified visual container. Provide generic agent tools that the AI can use.
+```
