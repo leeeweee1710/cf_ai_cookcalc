@@ -10,6 +10,7 @@ type ShoppingListCardProps = {
     instructions: Instruction[];
     onAddShoppingItem: (item: Omit<GroceryItem, "id">) => void;
     onRemoveShoppingItem: (id: string) => void;
+    onUpdateShoppingItem: (item: GroceryItem) => void;
     onAddInstruction: (text: string) => void;
     onRemoveInstruction: (id: string) => void;
     onMarkAsBought: (item: GroceryItem) => void;
@@ -20,6 +21,7 @@ export const ShoppingListCard = ({
     instructions,
     onAddShoppingItem,
     onRemoveShoppingItem,
+    onUpdateShoppingItem,
     onAddInstruction,
     onRemoveInstruction,
     onMarkAsBought,
@@ -59,6 +61,7 @@ export const ShoppingListCard = ({
                         items={shoppingList}
                         onAddItem={onAddShoppingItem}
                         onRemoveItem={onRemoveShoppingItem}
+                        onUpdateItem={onUpdateShoppingItem}
                         onMarkAsBought={onMarkAsBought}
                     />
                 ) : (

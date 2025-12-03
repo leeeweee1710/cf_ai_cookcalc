@@ -606,6 +606,13 @@ export default function Chat() {
               items={groceryList}
               onAddItem={handleAddGroceryItem}
               onRemoveItem={handleRemoveGroceryItem}
+              onUpdateItem={(item) => {
+                setGroceryList((prev) => {
+                  const newList = prev.map((i) => (i.id === item.id ? item : i));
+                  agent.setState({ groceryList: newList });
+                  return newList;
+                });
+              }}
             />
           </div>
         </div>
@@ -617,6 +624,13 @@ export default function Chat() {
               instructions={instructions}
               onAddShoppingItem={handleAddShoppingItem}
               onRemoveShoppingItem={handleRemoveShoppingItem}
+              onUpdateShoppingItem={(item) => {
+                setShoppingList((prev) => {
+                  const newList = prev.map((i) => (i.id === item.id ? item : i));
+                  agent.setState({ shoppingList: newList });
+                  return newList;
+                });
+              }}
               onAddInstruction={handleAddInstruction}
               onRemoveInstruction={handleRemoveInstruction}
               onMarkAsBought={(item) => {

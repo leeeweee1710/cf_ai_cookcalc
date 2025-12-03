@@ -1,16 +1,17 @@
 import { useState, useCallback } from "react";
 import { Card } from "@/components/card/Card";
 import { Button } from "@/components/button/Button";
-import { Trash, Plus } from "@phosphor-icons/react";
+import { Trash, Plus, Minus } from "@phosphor-icons/react";
 import type { GroceryItem } from "../../shared";
 
 type FridgeTrackerProps = {
   items: GroceryItem[];
   onAddItem: (item: Omit<GroceryItem, "id">) => void;
   onRemoveItem: (id: string) => void;
+  onUpdateItem: (item: GroceryItem) => void;
 };
 
-export const FridgeTracker = ({ items, onAddItem, onRemoveItem }: FridgeTrackerProps) => {
+export const FridgeTracker = ({ items, onAddItem, onRemoveItem, onUpdateItem }: FridgeTrackerProps) => {
   const [newItemName, setNewItemName] = useState("");
   const [newItemQuantity, setNewItemQuantity] = useState("");
   const [newItemExpiry, setNewItemExpiry] = useState("");
@@ -28,6 +29,22 @@ export const FridgeTracker = ({ items, onAddItem, onRemoveItem }: FridgeTrackerP
     setNewItemQuantity("");
     setNewItemExpiry("");
   }, [newItemName, newItemQuantity, newItemExpiry, onAddItem]);
+
+  const handleQuantityChange = (item: GroceryItem, change: number) => {
+    const currentQty = parseInt(item.quantity, 10);
+    if (isNaN(currentQty)) return;
+
+    const newQty = currentQty + change;
+    if (newQty <= 0) {
+      onRemoveItem(item.id);
+    } else {
+      onUpdateItem({ ...item, quantity: newQty.toString() });
+    }
+  };
+
+  const isNumeric = (val: string) => {
+    return !isNaN(parseInt(val, 10)) && /^\d+$/.test(val);
+  };
 
   return (
     <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-0 py-0 shadow overflow-hidden flex flex-col h-full">
@@ -77,18 +94,38 @@ export const FridgeTracker = ({ items, onAddItem, onRemoveItem }: FridgeTrackerP
                 <li key={item.id} className="p-3 flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate text-neutral-900 dark:text-neutral-100">{item.name}</p>
-                    <div className="flex gap-2 text-xs text-muted-foreground">
+                    <div className="flex gap-2 text-xs text-muted-foreground items-center">
                       <span>Qty: {item.quantity}</span>
                       {item.expiryDate && <span>• Expires: {item.expiryDate}</span>}
                     </div>
                   </div>
-                  <button
-                    onClick={() => onRemoveItem(item.id)}
-                    className="text-neutral-400 hover:text-red-500 transition-colors p-1"
-                    aria-label="Remove item"
-                  >
-                    <Trash size={16} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {isNumeric(item.quantity) && (
+                      <>
+                        <button
+                          onClick={() => handleQuantityChange(item, -1)}
+                          className="text-neutral-400 hover:text-red-500 transition-colors p-1"
+                          aria-label="Decrease quantity"
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleQuantityChange(item, 1)}
+                          className="text-neutral-400 hover:text-green-500 transition-colors p-1"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => onRemoveItem(item.id)}
+                      className="text-neutral-400 hover:text-red-500 transition-colors p-1"
+                      aria-label="Remove item"
+                    >
+                      <Trash size={16} />
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

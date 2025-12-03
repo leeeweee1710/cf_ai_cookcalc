@@ -1,16 +1,17 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/button/Button";
-import { Trash, Plus } from "@phosphor-icons/react";
+import { Trash, Plus, Minus } from "@phosphor-icons/react";
 import type { GroceryItem } from "../../shared";
 
 type ShoppingListProps = {
     items: GroceryItem[];
     onAddItem: (item: Omit<GroceryItem, "id">) => void;
     onRemoveItem: (id: string) => void;
+    onUpdateItem: (item: GroceryItem) => void;
     onMarkAsBought: (item: GroceryItem) => void;
 };
 
-export const ShoppingList = ({ items, onAddItem, onRemoveItem, onMarkAsBought }: ShoppingListProps) => {
+export const ShoppingList = ({ items, onAddItem, onRemoveItem, onUpdateItem, onMarkAsBought }: ShoppingListProps) => {
     const [newItemName, setNewItemName] = useState("");
     const [newItemQuantity, setNewItemQuantity] = useState("");
 
@@ -25,6 +26,22 @@ export const ShoppingList = ({ items, onAddItem, onRemoveItem, onMarkAsBought }:
         setNewItemName("");
         setNewItemQuantity("");
     }, [newItemName, newItemQuantity, onAddItem]);
+
+    const handleQuantityChange = (item: GroceryItem, change: number) => {
+        const currentQty = parseInt(item.quantity, 10);
+        if (isNaN(currentQty)) return;
+
+        const newQty = currentQty + change;
+        if (newQty <= 0) {
+            onRemoveItem(item.id);
+        } else {
+            onUpdateItem({ ...item, quantity: newQty.toString() });
+        }
+    };
+
+    const isNumeric = (val: string) => {
+        return !isNaN(parseInt(val, 10)) && /^\d+$/.test(val);
+    };
 
     return (
         <div className="flex flex-col gap-4 flex-1 overflow-hidden h-full">
@@ -68,19 +85,39 @@ export const ShoppingList = ({ items, onAddItem, onRemoveItem, onMarkAsBought }:
                                     />
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium truncate text-neutral-900 dark:text-neutral-100">{item.name}</p>
-                                        <div className="flex gap-2 text-xs text-muted-foreground">
+                                        <div className="flex gap-2 text-xs text-muted-foreground items-center">
                                             <span>Qty: {item.quantity}</span>
                                             {item.expiryDate && <span>• Expires: {item.expiryDate}</span>}
                                         </div>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => onRemoveItem(item.id)}
-                                    className="text-neutral-400 hover:text-red-500 transition-colors p-1"
-                                    aria-label="Remove item"
-                                >
-                                    <Trash size={16} />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    {isNumeric(item.quantity) && (
+                                        <>
+                                            <button
+                                                onClick={() => handleQuantityChange(item, -1)}
+                                                className="text-neutral-400 hover:text-red-500 transition-colors p-1"
+                                                aria-label="Decrease quantity"
+                                            >
+                                                <Minus size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleQuantityChange(item, 1)}
+                                                className="text-neutral-400 hover:text-green-500 transition-colors p-1"
+                                                aria-label="Increase quantity"
+                                            >
+                                                <Plus size={16} />
+                                            </button>
+                                        </>
+                                    )}
+                                    <button
+                                        onClick={() => onRemoveItem(item.id)}
+                                        className="text-neutral-400 hover:text-red-500 transition-colors p-1"
+                                        aria-label="Remove item"
+                                    >
+                                        <Trash size={16} />
+                                    </button>
+                                </div>
                             </li>
                         ))}
                     </ul>
