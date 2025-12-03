@@ -225,26 +225,26 @@ const deleteShoppingListItem = tool({
 });
 
 const addInstruction = tool({
-  description: "Add a new instruction",
+  description: "Add one or more instructions",
   inputSchema: z.object({
-    text: z.string().describe("The instruction text")
+    instructions: z.array(z.string()).describe("List of instruction texts")
   }),
-  execute: async ({ text }) => {
+  execute: async ({ instructions }) => {
     const { agent } = getCurrentAgent<Chat>();
-    const newInstruction = {
+    const newInstructions = instructions.map(text => ({
       id: crypto.randomUUID(),
       text
-    };
+    }));
 
     const currentState = agent!.state;
-    const newList = [...(currentState.instructions || []), newInstruction];
+    const newList = [...(currentState.instructions || []), ...newInstructions];
 
     agent!.setState({
       ...currentState,
       instructions: newList
     });
 
-    return `Added instruction: "${text}"`;
+    return `Added ${instructions.length} instructions.`;
   }
 });
 
