@@ -56,7 +56,7 @@ export function ToolInvocationCard({
           <Robot size={16} className="text-[#F48120]" />
         </div>
         <h4 className="font-medium flex items-center gap-2 flex-1 text-left">
-          {toolUIPart.type}
+          {toolUIPart.type.replace("tool-", "")}
           {!needsConfirmation && toolUIPart.state === "output-available" && (
             <span className="text-xs text-[#F48120]/70">✓ Completed</span>
           )}

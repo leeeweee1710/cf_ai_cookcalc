@@ -1,6 +1,6 @@
 # 🥘 CookCalc
 
-![npm i agents command](./npm-agents-banner.svg)
+![Website Demo](./demo-banner.jpeg)
 
 <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/leeeweee1710/cf_ai_cookcalc"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"/></a>
 

@@ -30,7 +30,7 @@ export const ShoppingListCard = ({
 
     return (
         <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-0 py-0 shadow overflow-hidden flex flex-col h-full">
-            <div className="border-b border-neutral-300 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/80 backdrop-blur flex items-center min-h-[60px]">
+            <div className="border-b border-neutral-300 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/80 backdrop-blur flex items-center min-h-[56.67px]">
                 <button
                     className={clsx(
                         "flex-1 h-full px-4 py-3 font-semibold transition-colors border-b-2",

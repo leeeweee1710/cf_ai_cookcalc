@@ -646,7 +646,7 @@ export default function Chat() {
         <div className="panel panel-timer order-4 flex flex-col min-h-0 lg:h-full overflow-hidden">
           <div className="lg:flex-1 lg:min-h-0">
             <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-0 py-0 shadow overflow-hidden flex flex-col lg:h-full">
-              <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/80 backdrop-blur flex items-center min-h-[60px]">
+              <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/80 backdrop-blur flex items-center min-h-[56.67px]">
                 <h2 className="font-semibold text-base">Timer</h2>
               </div>
               <div className="p-4 flex flex-col gap-4 flex-1 overflow-y-auto">
