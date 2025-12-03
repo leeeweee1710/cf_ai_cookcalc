@@ -12,6 +12,7 @@ type ShoppingListCardProps = {
     onRemoveShoppingItem: (id: string) => void;
     onAddInstruction: (text: string) => void;
     onRemoveInstruction: (id: string) => void;
+    onMarkAsBought: (item: GroceryItem) => void;
 };
 
 export const ShoppingListCard = ({
@@ -21,6 +22,7 @@ export const ShoppingListCard = ({
     onRemoveShoppingItem,
     onAddInstruction,
     onRemoveInstruction,
+    onMarkAsBought,
 }: ShoppingListCardProps) => {
     const [activeTab, setActiveTab] = useState<"shopping" | "instructions">("shopping");
 
@@ -57,6 +59,7 @@ export const ShoppingListCard = ({
                         items={shoppingList}
                         onAddItem={onAddShoppingItem}
                         onRemoveItem={onRemoveShoppingItem}
+                        onMarkAsBought={onMarkAsBought}
                     />
                 ) : (
                     <InstructionsList

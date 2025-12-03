@@ -619,6 +619,12 @@ export default function Chat() {
               onRemoveShoppingItem={handleRemoveShoppingItem}
               onAddInstruction={handleAddInstruction}
               onRemoveInstruction={handleRemoveInstruction}
+              onMarkAsBought={(item) => {
+                // Add to fridge
+                handleAddGroceryItem(item);
+                // Remove from shopping list
+                handleRemoveShoppingItem(item.id);
+              }}
             />
           </div>
         </div>

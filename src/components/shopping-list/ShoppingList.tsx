@@ -7,9 +7,10 @@ type ShoppingListProps = {
     items: GroceryItem[];
     onAddItem: (item: Omit<GroceryItem, "id">) => void;
     onRemoveItem: (id: string) => void;
+    onMarkAsBought: (item: GroceryItem) => void;
 };
 
-export const ShoppingList = ({ items, onAddItem, onRemoveItem }: ShoppingListProps) => {
+export const ShoppingList = ({ items, onAddItem, onRemoveItem, onMarkAsBought }: ShoppingListProps) => {
     const [newItemName, setNewItemName] = useState("");
     const [newItemQuantity, setNewItemQuantity] = useState("");
 
@@ -58,11 +59,19 @@ export const ShoppingList = ({ items, onAddItem, onRemoveItem }: ShoppingListPro
                     <ul className="divide-y divide-neutral-200 dark:divide-neutral-800">
                         {items.map((item) => (
                             <li key={item.id} className="p-3 flex items-center justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate text-neutral-900 dark:text-neutral-100">{item.name}</p>
-                                    <div className="flex gap-2 text-xs text-muted-foreground">
-                                        <span>Qty: {item.quantity}</span>
-                                        {item.expiryDate && <span>• Expires: {item.expiryDate}</span>}
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <input
+                                        type="checkbox"
+                                        className="h-5 w-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 cursor-pointer"
+                                        onChange={() => onMarkAsBought(item)}
+                                        title="Mark as bought (move to fridge)"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium truncate text-neutral-900 dark:text-neutral-100">{item.name}</p>
+                                        <div className="flex gap-2 text-xs text-muted-foreground">
+                                            <span>Qty: {item.quantity}</span>
+                                            {item.expiryDate && <span>• Expires: {item.expiryDate}</span>}
+                                        </div>
                                     </div>
                                 </div>
                                 <button
