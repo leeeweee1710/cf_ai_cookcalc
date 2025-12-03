@@ -51,15 +51,15 @@ const addGroceryItems = tool({
       quantity: item.quantity,
       expiryDate: item.expiryDate
     }));
-    
+
     const currentState = agent!.state;
     const newList = [...(currentState.groceryList || []), ...newItems];
-    
+
     agent!.setState({
       ...currentState,
       groceryList: newList
     });
-    
+
     return `Added ${items.length} items to grocery list: ${newItems.map(i => `${i.name} (${i.quantity})`).join(", ")}`;
   }
 });
@@ -70,12 +70,12 @@ const listGroceryItems = tool({
   execute: async () => {
     const { agent } = getCurrentAgent<Chat>();
     const list = agent!.state.groceryList || [];
-    
+
     if (list.length === 0) {
       return "The grocery list is empty.";
     }
-    
-    return list.map(item => 
+
+    return list.map(item =>
       `- ${item.name} (Qty: ${item.quantity})${item.expiryDate ? ` [Expires: ${item.expiryDate}]` : ''}`
     ).join("\n");
   }
@@ -90,21 +90,21 @@ const deleteGroceryItem = tool({
     const { agent } = getCurrentAgent<Chat>();
     const currentState = agent!.state;
     const list = currentState.groceryList || [];
-    
+
     const index = list.findIndex(item => item.name.toLowerCase() === name.toLowerCase());
-    
+
     if (index === -1) {
       return `Item "${name}" not found in the grocery list.`;
     }
-    
+
     const removedItem = list[index];
     const newList = [...list.slice(0, index), ...list.slice(index + 1)];
-    
+
     agent!.setState({
       ...currentState,
       groceryList: newList
     });
-    
+
     return `Removed ${removedItem.name} from grocery list.`;
   }
 });
@@ -119,13 +119,13 @@ const setTimer = tool({
   execute: async ({ minutes = 0, seconds = 0, label }) => {
     const { agent } = getCurrentAgent<Chat>();
     const totalMs = (minutes * 60 + seconds) * 1000;
-    
+
     if (totalMs <= 0) {
       return "Please provide a valid duration greater than 0 seconds.";
     }
 
     const now = Date.now();
-    
+
     const newTimerState: TimerSharedState = {
       status: "running",
       totalMs,
@@ -149,80 +149,147 @@ const setTimer = tool({
   }
 });
 
-// const scheduleTask = tool({
-//   description: "A tool to schedule a task to be executed at a later time",
-//   inputSchema: scheduleSchema,
-//   execute: async ({ when, description }) => {
-//     // we can now read the agent context from the ALS store
-//     const { agent } = getCurrentAgent<Chat>();
-//
-//     function throwError(msg: string): string {
-//       throw new Error(msg);
-//     }
-//     if (when.type === "no-schedule") {
-//       return "Not a valid schedule input";
-//     }
-//     const input =
-//       when.type === "scheduled"
-//         ? when.date // scheduled
-//         : when.type === "delayed"
-//           ? when.delayInSeconds // delayed
-//           : when.type === "cron"
-//             ? when.cron // cron
-//             : throwError("not a valid schedule input");
-//     try {
-//       agent!.schedule(input!, "executeTask", description);
-//     } catch (error) {
-//       console.error("error scheduling task", error);
-//       return `Error scheduling task: ${error}`;
-//     }
-//     return `Task scheduled for type "${when.type}" : ${input}`;
-//   }
-// });
+const addShoppingListItems = tool({
+  description: "Add one or more items to the shopping list",
+  inputSchema: z.object({
+    items: z.array(z.object({
+      name: z.string().describe("The name of the item"),
+      quantity: z.string().describe("The quantity of the item (e.g. '2', '1kg')"),
+      expiryDate: z.string().optional().describe("The expiry date of the item (YYYY-MM-DD)")
+    })).describe("List of items to add")
+  }),
+  execute: async ({ items }) => {
+    const { agent } = getCurrentAgent<Chat>();
+    const newItems = items.map(item => ({
+      id: crypto.randomUUID(),
+      name: item.name,
+      quantity: item.quantity,
+      expiryDate: item.expiryDate
+    }));
 
-/**
- * Tool to list all scheduled tasks
- * This executes automatically without requiring human confirmation
- */
-// const getScheduledTasks = tool({
-//   description: "List all tasks that have been scheduled",
-//   inputSchema: z.object({}),
-//   execute: async () => {
-//     const { agent } = getCurrentAgent<Chat>();
-//
-//     try {
-//       const tasks = agent!.getSchedules();
-//       if (!tasks || tasks.length === 0) {
-//         return "No scheduled tasks found.";
-//       }
-//       return tasks;
-//     } catch (error) {
-//       console.error("Error listing scheduled tasks", error);
-//       return `Error listing scheduled tasks: ${error}`;
-//     }
-//   }
-// });
+    const currentState = agent!.state;
+    const newList = [...(currentState.shoppingList || []), ...newItems];
 
-/**
- * Tool to cancel a scheduled task by its ID
- * This executes automatically without requiring human confirmation
- */
-// const cancelScheduledTask = tool({
-//   description: "Cancel a scheduled task using its ID",
-//   inputSchema: z.object({
-//     taskId: z.string().describe("The ID of the task to cancel")
-//   }),
-//   execute: async ({ taskId }) => {
-//     const { agent } = getCurrentAgent<Chat>();
-//     try {
-//       await agent!.cancelSchedule(taskId);
-//       return `Task ${taskId} has been successfully canceled.`;
-//     } catch (error) {
-//       console.error("Error canceling scheduled task", error);
-//       return `Error canceling task ${taskId}: ${error}`;
-//     }
-//   }
-// });
+    agent!.setState({
+      ...currentState,
+      shoppingList: newList
+    });
+
+    return `Added ${items.length} items to shopping list: ${newItems.map(i => `${i.name} (${i.quantity})`).join(", ")}`;
+  }
+});
+
+const listShoppingListItems = tool({
+  description: "List all items in the shopping list",
+  inputSchema: z.object({}),
+  execute: async () => {
+    const { agent } = getCurrentAgent<Chat>();
+    const list = agent!.state.shoppingList || [];
+
+    if (list.length === 0) {
+      return "The shopping list is empty.";
+    }
+
+    return list.map(item =>
+      `- ${item.name} (Qty: ${item.quantity})${item.expiryDate ? ` [Expires: ${item.expiryDate}]` : ''}`
+    ).join("\n");
+  }
+});
+
+const deleteShoppingListItem = tool({
+  description: "Delete an item from the shopping list by name",
+  inputSchema: z.object({
+    name: z.string().describe("The name of the item to delete")
+  }),
+  execute: async ({ name }) => {
+    const { agent } = getCurrentAgent<Chat>();
+    const currentState = agent!.state;
+    const list = currentState.shoppingList || [];
+
+    const index = list.findIndex(item => item.name.toLowerCase() === name.toLowerCase());
+
+    if (index === -1) {
+      return `Item "${name}" not found in the shopping list.`;
+    }
+
+    const removedItem = list[index];
+    const newList = [...list.slice(0, index), ...list.slice(index + 1)];
+
+    agent!.setState({
+      ...currentState,
+      shoppingList: newList
+    });
+
+    return `Removed ${removedItem.name} from shopping list.`;
+  }
+});
+
+const addInstruction = tool({
+  description: "Add a new instruction",
+  inputSchema: z.object({
+    text: z.string().describe("The instruction text")
+  }),
+  execute: async ({ text }) => {
+    const { agent } = getCurrentAgent<Chat>();
+    const newInstruction = {
+      id: crypto.randomUUID(),
+      text
+    };
+
+    const currentState = agent!.state;
+    const newList = [...(currentState.instructions || []), newInstruction];
+
+    agent!.setState({
+      ...currentState,
+      instructions: newList
+    });
+
+    return `Added instruction: "${text}"`;
+  }
+});
+
+const listInstructions = tool({
+  description: "List all instructions",
+  inputSchema: z.object({}),
+  execute: async () => {
+    const { agent } = getCurrentAgent<Chat>();
+    const list = agent!.state.instructions || [];
+
+    if (list.length === 0) {
+      return "There are no instructions.";
+    }
+
+    return list.map((item, index) =>
+      `${index + 1}. ${item.text}`
+    ).join("\n");
+  }
+});
+
+const deleteInstruction = tool({
+  description: "Delete an instruction by index (1-based)",
+  inputSchema: z.object({
+    index: z.number().describe("The 1-based index of the instruction to delete")
+  }),
+  execute: async ({ index }) => {
+    const { agent } = getCurrentAgent<Chat>();
+    const currentState = agent!.state;
+    const list = currentState.instructions || [];
+
+    if (index < 1 || index > list.length) {
+      return `Invalid index. Please provide a number between 1 and ${list.length}.`;
+    }
+
+    const removedItem = list[index - 1];
+    const newList = [...list.slice(0, index - 1), ...list.slice(index)];
+
+    agent!.setState({
+      ...currentState,
+      instructions: newList
+    });
+
+    return `Removed instruction: "${removedItem.text}"`;
+  }
+});
 
 /**
  * Export all available tools
@@ -237,7 +304,13 @@ export const tools = {
   addGroceryItems,
   listGroceryItems,
   deleteGroceryItem,
-  setTimer
+  setTimer,
+  addShoppingListItems,
+  listShoppingListItems,
+  deleteShoppingListItem,
+  addInstruction,
+  listInstructions,
+  deleteInstruction
 } satisfies ToolSet;
 
 /**

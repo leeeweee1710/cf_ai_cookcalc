@@ -22,9 +22,16 @@ export type GroceryItem = {
   expiryDate?: string;
 };
 
+export type Instruction = {
+  id: string;
+  text: string;
+};
+
 export type AgentSharedState = {
   timer: TimerSharedState;
   groceryList: GroceryItem[];
+  shoppingList: GroceryItem[];
+  instructions: Instruction[];
 };
 
 export const createDefaultTimerState = (): TimerSharedState => ({
@@ -36,5 +43,7 @@ export const createDefaultTimerState = (): TimerSharedState => ({
 
 export const createDefaultAgentState = (): AgentSharedState => ({
   timer: createDefaultTimerState(),
-  groceryList: []
+  groceryList: [],
+  shoppingList: [],
+  instructions: []
 });

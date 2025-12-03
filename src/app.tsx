@@ -10,7 +10,7 @@ import { isToolUIPart } from "ai";
 import { useAgentChat } from "agents/ai-react";
 import type { UIMessage } from "@ai-sdk/react";
 import type { tools } from "./tools";
-import type { TimerSharedState, GroceryItem } from "./shared";
+import type { TimerSharedState, GroceryItem, Instruction } from "./shared";
 import { createDefaultTimerState } from "./shared";
 
 // Component imports
@@ -23,6 +23,7 @@ import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { ToolInvocationCard } from "@/components/tool-invocation-card/ToolInvocationCard";
 import { IngredientsCalculator } from "@/components/ingredients-calculator/IngredientsCalculator";
 import { FridgeTracker } from "@/components/fridge-tracker/FridgeTracker";
+import { ShoppingListCard } from "@/components/shopping-list/ShoppingListCard";
 
 // Icon imports
 import {
@@ -154,6 +155,8 @@ export default function Chat() {
     createDefaultTimerState()
   );
   const [groceryList, setGroceryList] = useState<GroceryItem[]>([]);
+  const [shoppingList, setShoppingList] = useState<GroceryItem[]>([]);
+  const [instructions, setInstructions] = useState<Instruction[]>([]);
   const [displayMs, setDisplayMs] = useState(timerState.remainingMs);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -211,6 +214,22 @@ export default function Chat() {
         incomingState.groceryList
       ) {
         setGroceryList(incomingState.groceryList);
+      }
+
+      if (
+        incomingState &&
+        "shoppingList" in incomingState &&
+        incomingState.shoppingList
+      ) {
+        setShoppingList(incomingState.shoppingList);
+      }
+
+      if (
+        incomingState &&
+        "instructions" in incomingState &&
+        incomingState.instructions
+      ) {
+        setInstructions(incomingState.instructions);
       }
     }
   });
@@ -330,6 +349,52 @@ export default function Chat() {
       setGroceryList((prev) => {
         const newList = prev.filter((item) => item.id !== id);
         agent.setState({ groceryList: newList });
+        return newList;
+      });
+    },
+    [agent]
+  );
+
+  const handleAddShoppingItem = useCallback(
+    (item: Omit<GroceryItem, "id">) => {
+      const newItem: GroceryItem = { ...item, id: crypto.randomUUID() };
+      setShoppingList((prev) => {
+        const newList = [...prev, newItem];
+        agent.setState({ shoppingList: newList });
+        return newList;
+      });
+    },
+    [agent]
+  );
+
+  const handleRemoveShoppingItem = useCallback(
+    (id: string) => {
+      setShoppingList((prev) => {
+        const newList = prev.filter((item) => item.id !== id);
+        agent.setState({ shoppingList: newList });
+        return newList;
+      });
+    },
+    [agent]
+  );
+
+  const handleAddInstruction = useCallback(
+    (text: string) => {
+      const newInstruction: Instruction = { id: crypto.randomUUID(), text };
+      setInstructions((prev) => {
+        const newList = [...prev, newInstruction];
+        agent.setState({ instructions: newList });
+        return newList;
+      });
+    },
+    [agent]
+  );
+
+  const handleRemoveInstruction = useCallback(
+    (id: string) => {
+      setInstructions((prev) => {
+        const newList = prev.filter((item) => item.id !== id);
+        agent.setState({ instructions: newList });
         return newList;
       });
     },
@@ -528,7 +593,7 @@ export default function Chat() {
   return (
     <div className="app-shell min-h-dvh lg:h-dvh w-full p-4 flex justify-center items-stretch bg-fixed overflow-y-auto">
       {/* <HasOpenAIKey /> */}
-      <div className="app-content w-full max-w-5xl flex-1 lg:h-full mx-auto flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(280px,340px)_minmax(260px,320px)_1fr] lg:[grid-template-rows:minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch lg:overflow-hidden">
+      <div className="app-content w-full max-w-[90rem] flex-1 lg:h-full mx-auto flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(280px,340px)_minmax(260px,320px)_minmax(260px,320px)_1fr] lg:[grid-template-rows:minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch lg:overflow-hidden">
         <div className="panel panel-ingredients order-1 flex flex-col min-h-0 lg:h-full overflow-hidden">
           <div className="lg:flex-1 lg:min-h-0">
             <IngredientsCalculator />
@@ -545,7 +610,20 @@ export default function Chat() {
           </div>
         </div>
 
-        <div className="panel panel-timer order-3 flex flex-col min-h-0 lg:h-full overflow-hidden">
+        <div className="panel panel-shopping order-3 flex flex-col min-h-0 lg:h-full overflow-hidden">
+          <div className="lg:flex-1 lg:min-h-0">
+            <ShoppingListCard
+              shoppingList={shoppingList}
+              instructions={instructions}
+              onAddShoppingItem={handleAddShoppingItem}
+              onRemoveShoppingItem={handleRemoveShoppingItem}
+              onAddInstruction={handleAddInstruction}
+              onRemoveInstruction={handleRemoveInstruction}
+            />
+          </div>
+        </div>
+
+        <div className="panel panel-timer order-4 flex flex-col min-h-0 lg:h-full overflow-hidden">
           <div className="lg:flex-1 lg:min-h-0">
             <Card className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-300 dark:border-neutral-800 backdrop-blur px-0 py-0 shadow overflow-hidden flex flex-col lg:h-full">
               <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/80 backdrop-blur flex items-center min-h-[60px]">
@@ -609,7 +687,7 @@ export default function Chat() {
                           size="sm"
                           variant={
                             timerState.label === preset.label &&
-                            timerState.totalMs > 0
+                              timerState.totalMs > 0
                               ? "primary"
                               : "tertiary"
                           }
@@ -711,7 +789,7 @@ export default function Chat() {
           </div>
         </div>
 
-        <Card className="chat-panel order-4 h-[600px] lg:h-full lg:flex-1 min-h-0 w-full mx-auto flex flex-col shadow-xl rounded-xl overflow-hidden border border-neutral-300 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur p-0">
+        <Card className="chat-panel order-5 h-[600px] lg:h-full lg:flex-1 min-h-0 w-full mx-auto flex flex-col shadow-xl rounded-xl overflow-hidden border border-neutral-300 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur p-0">
           <div className="px-4 py-3 border-b border-neutral-300 dark:border-neutral-800 flex items-center gap-3 sticky top-0 z-10 bg-white/90 dark:bg-neutral-900/80 backdrop-blur">
             {/* <div className="flex items-center justify-center h-8 w-8">
               <svg
@@ -767,155 +845,155 @@ export default function Chat() {
 
           {/* Messages */}
           <div className="messages-container flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4 bg-white/70 dark:bg-neutral-950/30">
-          {agentMessages.length === 0 && (
-            <div className="flex items-center justify-center py-10">
-              <Card className="p-6 max-w-md mx-auto bg-neutral-100 dark:bg-neutral-900">
-                <div className="text-center space-y-4">
-                  <div className="bg-[#F48120]/10 text-[#F48120] rounded-full p-3 inline-flex">
-                    <Robot size={24} />
+            {agentMessages.length === 0 && (
+              <div className="flex items-center justify-center py-10">
+                <Card className="p-6 max-w-md mx-auto bg-neutral-100 dark:bg-neutral-900">
+                  <div className="text-center space-y-4">
+                    <div className="bg-[#F48120]/10 text-[#F48120] rounded-full p-3 inline-flex">
+                      <Robot size={24} />
+                    </div>
+                    <h3 className="font-semibold text-lg">Welcome to AI Chat to Cook</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Start a conversation with your AI assistant. Try:
+                    </p>
+                    <ul className="text-sm text-left space-y-2">
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#F48120]">•</span>
+                        <span>Setting a timer for 12 minutes and 30 seconds</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="text-[#F48120]">•</span>
+                        <span>Adding items to the grocery tracker</span>
+                      </li>
+                    </ul>
                   </div>
-                  <h3 className="font-semibold text-lg">Welcome to AI Chat to Cook</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Start a conversation with your AI assistant. Try:
-                  </p>
-                  <ul className="text-sm text-left space-y-2">
-                    <li className="flex items-center gap-2">
-                      <span className="text-[#F48120]">•</span>
-                      <span>Setting a timer for 12 minutes and 30 seconds</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-[#F48120]">•</span>
-                      <span>Adding items to the grocery tracker</span>
-                    </li>
-                  </ul>
-                </div>
-              </Card>
-            </div>
-          )}
+                </Card>
+              </div>
+            )}
 
-          {agentMessages.map((m, index) => {
-            const isUser = m.role === "user";
-            const showAvatar =
-              index === 0 || agentMessages[index - 1]?.role !== m.role;
+            {agentMessages.map((m, index) => {
+              const isUser = m.role === "user";
+              const showAvatar =
+                index === 0 || agentMessages[index - 1]?.role !== m.role;
 
-            return (
-              <div key={m.id}>
-                {showDebug && (
-                  <pre className="text-xs text-muted-foreground overflow-scroll">
-                    {JSON.stringify(m, null, 2)}
-                  </pre>
-                )}
-                <div
-                  className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-                >
+              return (
+                <div key={m.id}>
+                  {showDebug && (
+                    <pre className="text-xs text-muted-foreground overflow-scroll">
+                      {JSON.stringify(m, null, 2)}
+                    </pre>
+                  )}
                   <div
-                    className={`flex gap-2 max-w-[85%] ${isUser ? "flex-row-reverse" : "flex-row"
-                      }`}
+                    className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                   >
-                    {showAvatar && !isUser ? (
-                      <Avatar username={"AI"} className="flex-shrink-0" />
-                    ) : (
-                      !isUser && <div className="w-8" />
-                    )}
+                    <div
+                      className={`flex gap-2 max-w-[85%] ${isUser ? "flex-row-reverse" : "flex-row"
+                        }`}
+                    >
+                      {showAvatar && !isUser ? (
+                        <Avatar username={"AI"} className="flex-shrink-0" />
+                      ) : (
+                        !isUser && <div className="w-8" />
+                      )}
 
-                    <div>
                       <div>
-                        {m.parts?.map((part, i) => {
-                          if (part.type === "text") {
-                            return (
-                              // biome-ignore lint/suspicious/noArrayIndexKey: immutable index
-                              <div key={i}>
-                                {(() => {
-                                  const content = part.text.replace(
-                                    /^scheduled message: /,
-                                    ""
-                                  );
+                        <div>
+                          {m.parts?.map((part, i) => {
+                            if (part.type === "text") {
+                              return (
+                                // biome-ignore lint/suspicious/noArrayIndexKey: immutable index
+                                <div key={i}>
+                                  {(() => {
+                                    const content = part.text.replace(
+                                      /^scheduled message: /,
+                                      ""
+                                    );
 
-                                  if (!content.trim()) {
-                                    return null;
-                                  }
+                                    if (!content.trim()) {
+                                      return null;
+                                    }
 
-                                  return (
-                                    <>
-                                      <Card
-                                        className={`p-3 rounded-md bg-neutral-100 dark:bg-neutral-900 ${isUser
-                                          ? "rounded-br-none"
-                                          : "rounded-bl-none border-assistant-border"
-                                          } ${part.text.startsWith("scheduled message")
-                                            ? "border-accent/50"
-                                            : ""
-                                          } relative`}
-                                      >
-                                        {part.text.startsWith(
-                                          "scheduled message"
-                                        ) && (
-                                            <span className="absolute -top-3 -left-2 text-base">
-                                              🕒
-                                            </span>
+                                    return (
+                                      <>
+                                        <Card
+                                          className={`p-3 rounded-md bg-neutral-100 dark:bg-neutral-900 ${isUser
+                                            ? "rounded-br-none"
+                                            : "rounded-bl-none border-assistant-border"
+                                            } ${part.text.startsWith("scheduled message")
+                                              ? "border-accent/50"
+                                              : ""
+                                            } relative`}
+                                        >
+                                          {part.text.startsWith(
+                                            "scheduled message"
+                                          ) && (
+                                              <span className="absolute -top-3 -left-2 text-base">
+                                                🕒
+                                              </span>
+                                            )}
+                                          <MemoizedMarkdown
+                                            id={`${m.id}-${i}`}
+                                            content={content}
+                                          />
+                                        </Card>
+                                        <p
+                                          className={`text-xs text-muted-foreground mt-1 ${isUser ? "text-right" : "text-left"
+                                            }`}
+                                        >
+                                          {formatTime(
+                                            m.metadata?.createdAt
+                                              ? new Date(m.metadata.createdAt)
+                                              : new Date()
                                           )}
-                                        <MemoizedMarkdown
-                                          id={`${m.id}-${i}`}
-                                          content={content}
-                                        />
-                                      </Card>
-                                      <p
-                                        className={`text-xs text-muted-foreground mt-1 ${isUser ? "text-right" : "text-left"
-                                          }`}
-                                      >
-                                        {formatTime(
-                                          m.metadata?.createdAt
-                                            ? new Date(m.metadata.createdAt)
-                                            : new Date()
-                                        )}
-                                      </p>
-                                    </>
-                                  );
-                                })()}
-                              </div>
-                            );
-                          }
-
-                          if (isToolUIPart(part) && m.role === "assistant") {
-                            const toolCallId = part.toolCallId;
-                            const toolName = part.type.replace("tool-", "");
-                            const needsConfirmation =
-                              toolsRequiringConfirmation.includes(
-                                toolName as keyof typeof tools
+                                        </p>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
                               );
+                            }
 
-                            return (
-                              <ToolInvocationCard
-                                // biome-ignore lint/suspicious/noArrayIndexKey: using index is safe here as the array is static
-                                key={`${toolCallId}-${i}`}
-                                toolUIPart={part}
-                                toolCallId={toolCallId}
-                                needsConfirmation={needsConfirmation}
-                                onSubmit={({ toolCallId, result }) => {
-                                  addToolResult({
-                                    tool: part.type.replace("tool-", ""),
-                                    toolCallId,
-                                    output: result
-                                  });
-                                }}
-                                addToolResult={(toolCallId, result) => {
-                                  addToolResult({
-                                    tool: part.type.replace("tool-", ""),
-                                    toolCallId,
-                                    output: result
-                                  });
-                                }}
-                              />
-                            );
-                          }
-                          return null;
-                        })}
+                            if (isToolUIPart(part) && m.role === "assistant") {
+                              const toolCallId = part.toolCallId;
+                              const toolName = part.type.replace("tool-", "");
+                              const needsConfirmation =
+                                toolsRequiringConfirmation.includes(
+                                  toolName as keyof typeof tools
+                                );
+
+                              return (
+                                <ToolInvocationCard
+                                  // biome-ignore lint/suspicious/noArrayIndexKey: using index is safe here as the array is static
+                                  key={`${toolCallId}-${i}`}
+                                  toolUIPart={part}
+                                  toolCallId={toolCallId}
+                                  needsConfirmation={needsConfirmation}
+                                  onSubmit={({ toolCallId, result }) => {
+                                    addToolResult({
+                                      tool: part.type.replace("tool-", ""),
+                                      toolCallId,
+                                      output: result
+                                    });
+                                  }}
+                                  addToolResult={(toolCallId, result) => {
+                                    addToolResult({
+                                      tool: part.type.replace("tool-", ""),
+                                      toolCallId,
+                                      output: result
+                                    });
+                                  }}
+                                />
+                              );
+                            }
+                            return null;
+                          })}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
             <div ref={messagesEndRef} />
           </div>
 
