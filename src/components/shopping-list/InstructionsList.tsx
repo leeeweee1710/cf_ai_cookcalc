@@ -41,7 +41,7 @@ export const InstructionsList = ({ items, onAddItem, onRemoveItem }: Instruction
 
             <div className="flex-1 overflow-y-auto min-h-0 border rounded-md border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/30">
                 {items.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
+                    <div className="p-4 text-center text-muted-foreground">
                         No instructions added.
                     </div>
                 ) : (
@@ -49,8 +49,8 @@ export const InstructionsList = ({ items, onAddItem, onRemoveItem }: Instruction
                         {items.map((item, index) => (
                             <li key={item.id} className="p-3 flex items-start justify-between gap-3">
                                 <div className="flex gap-3 min-w-0">
-                                    <span className="text-sm font-mono text-muted-foreground mt-0.5">{index + 1}.</span>
-                                    <p className="text-sm text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">{item.text}</p>
+                                    <span className="font-mono text-muted-foreground">{index + 1}.</span>
+                                    <p className="text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">{item.text}</p>
                                 </div>
                                 <button
                                     onClick={() => onRemoveItem(item.id)}
