@@ -1,6 +1,27 @@
 @import "tailwindcss";
 @source "../node_modules/streamdown/dist/index.js";
 
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300;
+}
+
+.dark ::-webkit-scrollbar-track {
+  @apply bg-neutral-700;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-neutral-500;
+}
+
 /* Markdown Table Styling (Tailwind @apply) */
 .markdown-body table {
   @apply w-full border-collapse my-4 text-[0.95em];
