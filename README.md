@@ -8,9 +8,9 @@ A smart cooking calculator using Cloudflare's Agent platform, based on [`agents-
 
 ## Features
 
-- 💬 Interactive chat with AI and voice input
-- 🛠️ AI can interact with the components directly
-- 🔄 Sync state and chat history just by sharing URL
+- 💬 Interactive chat with voice input
+- 🛠️ AI can interact with the tools directly
+- 🔄 Sync state (shopping list, timer, etc.) and chat history in real time just by sharing URL
 
 ## Prerequisites
 

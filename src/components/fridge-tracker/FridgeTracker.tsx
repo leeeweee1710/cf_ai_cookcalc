@@ -94,7 +94,7 @@ export const FridgeTracker = ({ items, onAddItem, onRemoveItem, onUpdateItem }: 
                 <li key={item.id} className="p-3 flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate text-neutral-900 dark:text-neutral-100">{item.name}</p>
-                    <div className="flex gap-2 text-xs text-muted-foreground items-center">
+                    <div className="flex gap-1 text-xs text-muted-foreground items-center">
                       <span>Qty: {item.quantity}</span>
                       {item.expiryDate && <span>• Expires: {item.expiryDate}</span>}
                     </div>
