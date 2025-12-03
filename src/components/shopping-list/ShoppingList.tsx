@@ -32,7 +32,7 @@ export const ShoppingList = ({ items, onAddItem, onRemoveItem }: ShoppingListPro
                     <input
                         type="text"
                         placeholder="Item name"
-                        className="flex-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-base font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+                        className="flex-1 min-w-0 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-base font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
                         value={newItemName}
                         onChange={(e) => setNewItemName(e.target.value)}
                     />
