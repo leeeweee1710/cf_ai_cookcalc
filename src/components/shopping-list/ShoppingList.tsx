@@ -32,18 +32,18 @@ export const ShoppingList = ({ items, onAddItem, onRemoveItem }: ShoppingListPro
                     <input
                         type="text"
                         placeholder="Item name"
-                        className="flex-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+                        className="flex-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-base font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
                         value={newItemName}
                         onChange={(e) => setNewItemName(e.target.value)}
                     />
                     <input
                         type="text"
                         placeholder="Qty"
-                        className="w-20 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+                        className="w-20 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-950/60 px-3 py-2 text-base font-semibold text-neutral-900 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
                         value={newItemQuantity}
                         onChange={(e) => setNewItemQuantity(e.target.value)}
                     />
-                    <Button onClick={handleAdd} disabled={!newItemName || !newItemQuantity} variant="primary" size="md">
+                    <Button onClick={handleAdd} disabled={!newItemName || !newItemQuantity} variant="primary">
                         <Plus size={16} />
                     </Button>
                 </div>
