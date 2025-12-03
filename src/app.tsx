@@ -593,7 +593,7 @@ export default function Chat() {
   return (
     <div className="app-shell min-h-dvh lg:h-dvh w-full p-4 flex justify-center items-stretch bg-fixed overflow-y-auto">
       {/* <HasOpenAIKey /> */}
-      <div className="app-content w-full max-w-[90rem] flex-1 lg:h-full mx-auto flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(280px,340px)_minmax(260px,320px)_minmax(260px,320px)_1fr] lg:[grid-template-rows:minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch lg:overflow-hidden">
+      <div className="app-content w-full max-w-[90rem] flex-1 lg:h-full mx-auto flex flex-col gap-4 lg:grid lg:grid-cols-4 lg:[grid-template-rows:minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch lg:overflow-hidden">
         <div className="panel panel-ingredients order-1 flex flex-col min-h-0 lg:h-full overflow-hidden">
           <div className="lg:flex-1 lg:min-h-0">
             <IngredientsCalculator />

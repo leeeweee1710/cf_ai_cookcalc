@@ -51,7 +51,7 @@ export const ShoppingList = ({ items, onAddItem, onRemoveItem }: ShoppingListPro
 
             <div className="flex-1 overflow-y-auto min-h-0 border rounded-md border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/30">
                 {items.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
+                    <div className="p-4 text-center text-muted-foreground">
                         Shopping list is empty.
                     </div>
                 ) : (

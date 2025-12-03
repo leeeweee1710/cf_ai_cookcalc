@@ -29,7 +29,7 @@ export const ShoppingListCard = ({
             <div className="border-b border-neutral-300 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/80 backdrop-blur flex items-center min-h-[60px]">
                 <button
                     className={clsx(
-                        "flex-1 h-full px-4 py-3 text-sm font-semibold transition-colors border-b-2",
+                        "flex-1 h-full px-4 py-3 font-semibold transition-colors border-b-2",
                         activeTab === "shopping"
                             ? "text-neutral-900 dark:text-neutral-50 border-neutral-900 dark:border-neutral-50"
                             : "text-muted-foreground border-transparent hover:text-neutral-900 dark:hover:text-neutral-200"
@@ -41,7 +41,7 @@ export const ShoppingListCard = ({
                 <div className="w-px h-6 bg-neutral-300 dark:bg-neutral-800" />
                 <button
                     className={clsx(
-                        "flex-1 h-full px-4 py-3 text-sm font-semibold transition-colors border-b-2",
+                        "flex-1 h-full px-4 py-3 font-semibold transition-colors border-b-2",
                         activeTab === "instructions"
                             ? "text-neutral-900 dark:text-neutral-50 border-neutral-900 dark:border-neutral-50"
                             : "text-muted-foreground border-transparent hover:text-neutral-900 dark:hover:text-neutral-200"
