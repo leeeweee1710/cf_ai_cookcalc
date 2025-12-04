@@ -53,6 +53,10 @@ npm run deploy
 │   └── styles.css     # UI styling
 ```
 
+## Known Issues
+
+- State syncing: reliability issues, sometimes items in lists will be lost
+
 ## License
 
 MIT
