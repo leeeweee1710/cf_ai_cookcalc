@@ -55,7 +55,7 @@ npm run deploy
 
 ## Known Issues
 
-- State syncing: reliability issues, sometimes items in lists will be lost
+- ~~State syncing: reliability issues, sometimes items in lists will be lost~~ (fixed)
 
 ## License
 

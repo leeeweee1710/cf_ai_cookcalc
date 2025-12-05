@@ -337,22 +337,22 @@ export default function Chat() {
       const newItem: GroceryItem = { ...item, id: crypto.randomUUID() };
       setGroceryList((prev) => {
         const newList = [...prev, newItem];
-        agent.setState({ groceryList: newList });
+        agent.setState({ timer: timerState, groceryList: newList, shoppingList, instructions });
         return newList;
       });
     },
-    [agent]
+    [agent, timerState, shoppingList, instructions]
   );
 
   const handleRemoveGroceryItem = useCallback(
     (id: string) => {
       setGroceryList((prev) => {
         const newList = prev.filter((item) => item.id !== id);
-        agent.setState({ groceryList: newList });
+        agent.setState({ timer: timerState, groceryList: newList, shoppingList, instructions });
         return newList;
       });
     },
-    [agent]
+    [agent, timerState, shoppingList, instructions]
   );
 
   const handleAddShoppingItem = useCallback(
@@ -360,22 +360,22 @@ export default function Chat() {
       const newItem: GroceryItem = { ...item, id: crypto.randomUUID() };
       setShoppingList((prev) => {
         const newList = [...prev, newItem];
-        agent.setState({ shoppingList: newList });
+        agent.setState({ timer: timerState, groceryList, shoppingList: newList, instructions });
         return newList;
       });
     },
-    [agent]
+    [agent, timerState, groceryList, instructions]
   );
 
   const handleRemoveShoppingItem = useCallback(
     (id: string) => {
       setShoppingList((prev) => {
         const newList = prev.filter((item) => item.id !== id);
-        agent.setState({ shoppingList: newList });
+        agent.setState({ timer: timerState, groceryList, shoppingList: newList, instructions });
         return newList;
       });
     },
-    [agent]
+    [agent, timerState, groceryList, instructions]
   );
 
   const handleAddInstruction = useCallback(
@@ -383,22 +383,22 @@ export default function Chat() {
       const newInstruction: Instruction = { id: crypto.randomUUID(), text };
       setInstructions((prev) => {
         const newList = [...prev, newInstruction];
-        agent.setState({ instructions: newList });
+        agent.setState({ timer: timerState, groceryList, shoppingList, instructions: newList });
         return newList;
       });
     },
-    [agent]
+    [agent, timerState, groceryList, shoppingList]
   );
 
   const handleRemoveInstruction = useCallback(
     (id: string) => {
       setInstructions((prev) => {
         const newList = prev.filter((item) => item.id !== id);
-        agent.setState({ instructions: newList });
+        agent.setState({ timer: timerState, groceryList, shoppingList, instructions: newList });
         return newList;
       });
     },
-    [agent]
+    [agent, timerState, groceryList, shoppingList]
   );
 
   const syncTimerState = useCallback(
@@ -410,11 +410,11 @@ export default function Chat() {
           updatedAt: Date.now()
         };
         setDisplayMs(getTimerDisplayMs(normalized));
-        agent.setState({ timer: normalized });
+        agent.setState({ timer: normalized, groceryList, shoppingList, instructions });
         return normalized;
       });
     },
-    [agent]
+    [agent, groceryList, shoppingList, instructions]
   );
 
   const {
@@ -609,7 +609,7 @@ export default function Chat() {
               onUpdateItem={(item) => {
                 setGroceryList((prev) => {
                   const newList = prev.map((i) => (i.id === item.id ? item : i));
-                  agent.setState({ groceryList: newList });
+                  agent.setState({ timer: timerState, groceryList: newList, shoppingList, instructions });
                   return newList;
                 });
               }}
@@ -627,7 +627,7 @@ export default function Chat() {
               onUpdateShoppingItem={(item) => {
                 setShoppingList((prev) => {
                   const newList = prev.map((i) => (i.id === item.id ? item : i));
-                  agent.setState({ shoppingList: newList });
+                  agent.setState({ timer: timerState, groceryList, shoppingList: newList, instructions });
                   return newList;
                 });
               }}
