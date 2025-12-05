@@ -10,6 +10,8 @@ import { getCurrentAgent } from "agents";
 import { scheduleSchema } from "agents/schedule";
 import type { TimerSharedState } from "./shared";
 
+type GroceryItem = { name: string; quantity: string; expiryDate?: string };
+
 /**
  * Weather information tool that requires human confirmation
  * When invoked, this will present a confirmation dialog to the user
@@ -37,15 +39,20 @@ import type { TimerSharedState } from "./shared";
 const addGroceryItems = tool({
   description: "Add one or more items to the grocery/fridge list",
   inputSchema: z.object({
-    items: z.array(z.object({
-      name: z.string().describe("The name of the item"),
-      quantity: z.string().describe("The quantity of the item (e.g. '2', '1kg')"),
-      expiryDate: z.string().optional().describe("The expiry date of the item (YYYY-MM-DD)")
-    })).describe("List of items to add")
+    items: z.union([
+      z.array(z.object({
+        name: z.string().describe("The name of the item"),
+        quantity: z.string().describe("The quantity of the item (e.g. '2', '1kg')"),
+        expiryDate: z.string().optional().describe("The expiry date of the item (YYYY-MM-DD)")
+      })),
+      z.string() // Allow stringified JSON as fallback
+    ]).describe("List of items to add (array or JSON string)")
   }),
-  execute: async ({ items }) => {
+  execute: async ({ items: rawItems }) => {
+    // Parse items if passed as a JSON string
+    const items: GroceryItem[] = typeof rawItems === 'string' ? JSON.parse(rawItems) : rawItems;
     const { agent } = getCurrentAgent<Chat>();
-    const newItems = items.map(item => ({
+    const newItems = items.map((item: GroceryItem) => ({
       id: crypto.randomUUID(),
       name: item.name,
       quantity: item.quantity,
@@ -152,15 +159,20 @@ const setTimer = tool({
 const addShoppingListItems = tool({
   description: "Add one or more items to the shopping list",
   inputSchema: z.object({
-    items: z.array(z.object({
-      name: z.string().describe("The name of the item"),
-      quantity: z.string().describe("The quantity of the item (e.g. '2', '1kg')"),
-      expiryDate: z.string().optional().describe("The expiry date of the item (YYYY-MM-DD)")
-    })).describe("List of items to add")
+    items: z.union([
+      z.array(z.object({
+        name: z.string().describe("The name of the item"),
+        quantity: z.string().describe("The quantity of the item (e.g. '2', '1kg')"),
+        expiryDate: z.string().optional().describe("The expiry date of the item (YYYY-MM-DD)")
+      })),
+      z.string() // Allow stringified JSON as fallback
+    ]).describe("List of items to add (array or JSON string)")
   }),
-  execute: async ({ items }) => {
+  execute: async ({ items: rawItems }) => {
+    // Parse items if passed as a JSON string
+    const items: GroceryItem[] = typeof rawItems === 'string' ? JSON.parse(rawItems) : rawItems;
     const { agent } = getCurrentAgent<Chat>();
-    const newItems = items.map(item => ({
+    const newItems = items.map((item: GroceryItem) => ({
       id: crypto.randomUUID(),
       name: item.name,
       quantity: item.quantity,
